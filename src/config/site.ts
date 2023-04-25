@@ -1,11 +1,11 @@
 export const siteConfig = {
-  name: "tiplink-oss-alternative",
+  name: "onsol",
   url: "https://google.com",
   ogImage: "",
   description: "todo",
   links: {
     twitter: "https://twitter.com/AnishDe12020",
-    github: "https://github.com/AnishDe12020/tiplink-oss-alternative",
+    github: "https://github.com/AnishDe12020/onsol",
   },
 };
 
