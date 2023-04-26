@@ -2,7 +2,9 @@
 
 import { useWallet } from "@solana/wallet-adapter-react";
 import { LinkIcon, UnlinkIcon, WalletIcon } from "lucide-react";
-import { HTMLProps, forwardRef, useMemo, useState } from "react";
+import { forwardRef, useCallback, useMemo, useState } from "react";
+import { signIn, signOut, useSession } from "next-auth/react";
+import base58 from "bs58";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,9 +22,51 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { truncatePubkey } from "@/utils/truncate";
+import axios from "axios";
+import { Icons } from "@/components/icons";
+import { toast } from "sonner";
 
 export const ConnectWallet = forwardRef<HTMLButtonElement>((props, ref) => {
-  const { wallets, select, publicKey, disconnect, connect } = useWallet();
+  const { wallets, select, publicKey, disconnect, connect, signMessage } =
+    useWallet();
+  const { status } = useSession();
+
+  const [isSigningIn, setIsSigningIn] = useState(false);
+
+  const login = useCallback(async () => {
+    setIsSigningIn(true);
+    const res = await axios.get("/api/nonce");
+
+    if (res.status != 200) {
+      console.error("failed to fetch nonce");
+      return;
+    }
+
+    const { nonce } = res.data;
+
+    const message = `Sign this message for authenticating with your wallet. Nonce: ${nonce}`;
+    const encodedMessage = new TextEncoder().encode(message);
+
+    if (!signMessage) {
+      console.error("signMessage is not defined");
+      return;
+    }
+
+    const signedMessage = await signMessage(encodedMessage);
+
+    try {
+      await signIn("credentials", {
+        publicKey: publicKey?.toBase58(),
+        signature: base58.encode(signedMessage),
+        callbackUrl: `${window.location.origin}/${window.location.pathname}`,
+      });
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to sign in");
+    }
+
+    setIsSigningIn(false);
+  }, [signMessage, publicKey]);
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -35,10 +79,17 @@ export const ConnectWallet = forwardRef<HTMLButtonElement>((props, ref) => {
     [wallets]
   );
 
-  return (
+  const disconenctWallet = () => {
+    disconnect();
+    signOut();
+  };
+
+  return status === "loading" ? (
+    <Icons.spinner className="w-4 h-4 mr-2 animate-spin" />
+  ) : (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        {publicKey ? (
+        {publicKey && status === "authenticated" ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button ref={ref} variant="secondary" {...props}>
@@ -48,7 +99,7 @@ export const ConnectWallet = forwardRef<HTMLButtonElement>((props, ref) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem
-                onClick={disconnect}
+                onClick={disconenctWallet}
                 className="text-destructive"
               >
                 <UnlinkIcon className="w-4 h-4 mr-2" />
@@ -69,39 +120,46 @@ export const ConnectWallet = forwardRef<HTMLButtonElement>((props, ref) => {
           <DialogTitle>Connect Wallet</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4">
-          {availableWallets.map((wallet) => (
-            <Button
-              key={wallet.adapter.name}
-              onClick={(e) => {
-                console.log(wallet.adapter.name);
-                select(wallet.adapter.name);
+        {publicKey ? (
+          <div className="flex flex-col items-center justify-center gap-6 mt-4 text-center">
+            <Button onClick={() => login()} isLoading={isSigningIn}>
+              Sign Message
+            </Button>
+            <p className="text-sm text-gray-300">
+              Sign a message with you wallet to prove that you own it.
+              Don&apos;t worry, this wont trigger a transaction on the
+              blockchain and hence no gas fees will be incurred!
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {availableWallets.map((wallet) => (
+              <Button
+                key={wallet.adapter.name}
+                onClick={(e) => {
+                  console.log(wallet.adapter.name);
+                  select(wallet.adapter.name);
 
-                if (!e.defaultPrevented) {
-                  connect()
-                    .then(() => {
-                      console.log("Connected!");
-                    })
-                    .catch((e) => {
+                  if (!e.defaultPrevented) {
+                    connect().catch((e) => {
                       console.error(e);
                     });
-
-                  setIsOpen(false);
-                }
-              }}
-              variant="secondary"
-              className="justify-start"
-              size="lg"
-            >
-              <img
-                className="w-5 h-5 mr-4"
-                src={wallet.adapter.icon}
-                alt={wallet.adapter.name}
-              />
-              <span>{wallet.adapter.name}</span>
-            </Button>
-          ))}
-        </div>
+                  }
+                }}
+                variant="secondary"
+                className="justify-start"
+                size="lg"
+              >
+                <img
+                  className="w-5 h-5 mr-4"
+                  src={wallet.adapter.icon}
+                  alt={wallet.adapter.name}
+                />
+                <span>{wallet.adapter.name}</span>
+              </Button>
+            ))}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

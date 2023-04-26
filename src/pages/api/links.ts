@@ -15,9 +15,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         });
       }
 
-      const { amount, token, depositTxSig, userId, message } = body;
+      const { amount, token, depositTxSig, address, message } = body;
 
-      if (!amount || !token || !depositTxSig || !userId) {
+      if (!amount || !token || !depositTxSig || !address) {
         return res.status(400).json({
           success: false,
           message: "Missing fields",
@@ -33,7 +33,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             message,
             createdBy: {
               connect: {
-                id: userId,
+                address,
               },
             },
           },

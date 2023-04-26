@@ -15,6 +15,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import axios from "axios";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { Token } from "@prisma/client";
+import { toast } from "sonner";
+import { useState } from "react";
 
 interface CreateLinkFormSchema {
   amount: number;
@@ -43,14 +47,38 @@ const CreateLinkDialog = () => {
     resolver: createLinkFormResolver,
   });
 
+  const { publicKey } = useWallet();
+
+  const [isCreatingLink, setIsCreatingLink] = useState(false);
+
   const onSubmit = handleSubmit(async (data) => {
     console.log(data);
 
-    // const res = await axios.post("/api/links", {
-    //     amount: data.amount,
-    //     message: data.message,
-    //     userId: "1"
-    // })
+    setIsCreatingLink(true);
+
+    if (!publicKey) {
+      console.error("public key is not defined");
+      return;
+    }
+
+    const res = await axios.post("/api/links", {
+      amount: data.amount,
+      message: data.message,
+      address: publicKey.toBase58(),
+      depositTxSig: "qwlrjfilo;fikl;",
+      token: Token.SOL,
+    });
+
+    console.log(res.data);
+
+    if (res.status != 200) {
+      toast.error("Failed to create link");
+      setIsCreatingLink(false);
+      return;
+    }
+
+    toast.success("Link created successfully");
+    setIsCreatingLink(false);
   });
 
   return (
@@ -102,7 +130,9 @@ const CreateLinkDialog = () => {
           </div>
 
           <DialogFooter className="mt-6">
-            <Button type="submit">Create link</Button>
+            <Button type="submit" isLoading={isCreatingLink}>
+              Create link
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
