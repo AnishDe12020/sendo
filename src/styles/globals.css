@@ -79,3 +79,9 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+@layer components {
+  .label-required {
+    @apply after:content-['*'] after:ml-1 after:text-red-500;
+  }
+}

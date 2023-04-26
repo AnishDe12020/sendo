@@ -10,6 +10,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Token {
+  SOL
+  SPL
+}
+
 model User {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   createdAt DateTime @default(now()) @map("created_at")
@@ -27,8 +32,9 @@ model Link {
   amount    Int
   depositTx String
   claimed   Boolean @default(false)
-  token     String
+  token     Token
   decimals  Int?
+  message   String?
   symbol    String?
   mint      String?
   claimTx   String?
