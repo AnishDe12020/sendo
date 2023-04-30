@@ -22,8 +22,11 @@ export const SolanaProvider = ({ children }: { children: React.ReactNode }) => {
     []
   );
 
-  // const endpoint = useMemo(() => clusterApiUrl("mainnet-beta"), []);
-  const endpoint = useMemo(() => clusterApiUrl("devnet"), []);
+  const endpoint = useMemo(
+    () => process.env.NEXT_PUBLIC_MAINNET_RPC as string,
+    []
+  );
+  // const endpoint = useMemo(() => clusterApiUrl("devnet"), []);
 
   return (
     <ConnectionProvider endpoint={endpoint}>

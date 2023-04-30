@@ -11,17 +11,35 @@ import { Button } from "./ui/button";
 import { DialogFooter, DialogHeader } from "./ui/dialog";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import axios from "axios";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { Token } from "@prisma/client";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import {
+  SUPPORTED_SPL_TOKENS,
+  SUPPORTED_TOKENS_LIST,
+  SPL_TOKEN_ENUM,
+} from "@/lib/tokens";
+import { Token } from "@prisma/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import {
+  createTransferCheckedInstruction,
+  getAssociatedTokenAddressSync,
+} from "@solana/spl-token";
 
 interface CreateLinkFormSchema {
   amount: number;
+  type: string;
   message?: string;
 }
 
@@ -33,6 +51,7 @@ const createLinkFormResolver = zodResolver(
         .positive({ message: "Amount should be positive" })
         .min(0.0000001, { message: "Amount should be greater than 0.0000001" }),
       message: z.string().optional(),
+      type: z.string(),
     })
     .required()
 );
@@ -43,11 +62,18 @@ const CreateLinkDialog = () => {
     handleSubmit,
     formState: { errors },
     setValue,
+    control,
+    reset,
   } = useForm<CreateLinkFormSchema>({
     resolver: createLinkFormResolver,
+    defaultValues: {
+      type: "SOL",
+    },
   });
 
-  const { publicKey } = useWallet();
+  const { publicKey, sendTransaction } = useWallet();
+
+  const { connection } = useConnection();
 
   const [isCreatingLink, setIsCreatingLink] = useState(false);
 
@@ -61,24 +87,123 @@ const CreateLinkDialog = () => {
       return;
     }
 
-    const res = await axios.post("/api/links", {
-      amount: data.amount,
-      message: data.message,
-      address: publicKey.toBase58(),
-      depositTxSig: "qwlrjfilo;fikl;",
-      token: Token.SOL,
-    });
+    const isSPL = data.type !== "SOL";
 
-    console.log(res.data);
+    const vaultPublicKey = process.env.NEXT_PUBLIC_VAULT_PUBLIC_KEY;
 
-    if (res.status != 200) {
-      toast.error("Failed to create link");
-      setIsCreatingLink(false);
+    if (!vaultPublicKey) {
+      console.error("vault public key is not defined");
       return;
     }
 
-    toast.success("Link created successfully");
-    setIsCreatingLink(false);
+    toast.promise(
+      async () => {
+        let splToken;
+
+        if (isSPL) {
+          splToken = SUPPORTED_SPL_TOKENS[data.type as SPL_TOKEN_ENUM];
+
+          console.log(splToken);
+
+          const userATA = getAssociatedTokenAddressSync(
+            new PublicKey(splToken.address),
+            publicKey
+          );
+          const valutATA = getAssociatedTokenAddressSync(
+            new PublicKey(splToken.address),
+            new PublicKey(vaultPublicKey)
+          );
+
+          const depositTx = new Transaction().add(
+            createTransferCheckedInstruction(
+              userATA,
+              new PublicKey(splToken.address),
+              valutATA,
+              publicKey,
+              data.amount * 10 ** splToken.decimals,
+              splToken.decimals
+            )
+          );
+
+          const latestBlockhash = await connection.getLatestBlockhash();
+
+          const depositTxSig = await sendTransaction(depositTx, connection);
+
+          await connection.confirmTransaction(
+            {
+              signature: depositTxSig,
+              blockhash: latestBlockhash.blockhash,
+              lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+            },
+            "processed"
+          );
+
+          const res = await axios.post("/api/links", {
+            amount: data.amount,
+            message: data.message,
+            address: publicKey.toBase58(),
+            depositTxSig,
+            token: Token.SPL,
+            mint: splToken.address,
+            decimals: splToken.decimals,
+            symbol: splToken.symbol,
+          });
+
+          console.log(res.data);
+
+          if (res.status != 200) {
+            throw new Error("Error creating link");
+          }
+        } else {
+          const depositTx = new Transaction().add(
+            SystemProgram.transfer({
+              fromPubkey: publicKey,
+              toPubkey: new PublicKey(vaultPublicKey),
+              lamports: data.amount * 10 ** 9,
+            })
+          );
+
+          const latestBlockhash = await connection.getLatestBlockhash();
+
+          const depositTxSig = await sendTransaction(depositTx, connection);
+
+          await connection.confirmTransaction(
+            {
+              signature: depositTxSig,
+              blockhash: latestBlockhash.blockhash,
+              lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+            },
+            "processed"
+          );
+
+          const res = await axios.post("/api/links", {
+            amount: data.amount,
+            message: data.message,
+            address: publicKey.toBase58(),
+            depositTxSig,
+            token: Token.SOL,
+          });
+
+          console.log(res.data);
+
+          if (res.status != 200) {
+            throw new Error("Error creating link");
+          }
+        }
+      },
+      {
+        loading: "Creating link...",
+        success: () => {
+          setIsCreatingLink(false);
+          reset();
+          return "Link created successfully";
+        },
+        error: () => {
+          setIsCreatingLink(false);
+          return "Error creating link";
+        },
+      }
+    );
   });
 
   return (
@@ -108,11 +233,44 @@ const CreateLinkDialog = () => {
                   onChange: (e) =>
                     setValue("amount", parseFloat(e.target.value)),
                 })}
+                step="any"
                 type="number"
-                placeholder="Amount in SOL"
+                placeholder="Amount"
               />
               {errors.amount && (
                 <span className="text-red-500">{errors.amount.message}</span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="type" required>
+                Token
+              </Label>
+              <Controller
+                control={control}
+                name="type"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a token" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      {SUPPORTED_TOKENS_LIST.map((token) => (
+                        <SelectItem
+                          key={token.name}
+                          value={token.symbol}
+                          className="flex"
+                        >
+                          <span>{token.symbol}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.type && (
+                <span className="text-red-500">{errors.type.message}</span>
               )}
             </div>
 
