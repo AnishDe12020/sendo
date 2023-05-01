@@ -36,6 +36,8 @@ import {
   createTransferCheckedInstruction,
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
+import { useSession } from "next-auth/react";
+import { ConnectWallet } from "./shared/ConnectWallet";
 
 interface CreateLinkFormSchema {
   amount: number;
@@ -70,6 +72,8 @@ const CreateLinkDialog = () => {
       type: "SOL",
     },
   });
+
+  const { data: user } = useSession();
 
   const { publicKey, sendTransaction } = useWallet();
 
@@ -206,7 +210,7 @@ const CreateLinkDialog = () => {
     );
   });
 
-  return (
+  return publicKey && user?.user?.name ? (
     <Dialog>
       <DialogTrigger asChild>
         <Button>Create new link</Button>
@@ -295,6 +299,8 @@ const CreateLinkDialog = () => {
         </form>
       </DialogContent>
     </Dialog>
+  ) : (
+    <ConnectWallet />
   );
 };
 
