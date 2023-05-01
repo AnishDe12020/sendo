@@ -1,11 +1,8 @@
 import CreateLinkDialog from "@/components/CreateLinkDialog";
 import { prisma } from "@/lib/db";
-import { SUPPORTED_SPL_TOKENS, TOKEN_SOL } from "@/lib/tokens";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import { getServerSession } from "next-auth/next";
-import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { ClipboardCopyIcon, ClipboardIcon } from "lucide-react";
+
 import LinkCard from "@/components/LinkCard";
 
 export default async function Home() {
@@ -18,8 +15,6 @@ export default async function Home() {
       },
     },
   });
-
-  console.log(links);
 
   return (
     <div className="flex flex-col items-center w-full mt-8 space-x-4">

@@ -17,7 +17,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
               <div className="flex flex-col w-screen h-screen">
                 <Header />
                 <Toaster />
-                <main className="container flex flex-col h-full mt-8 mb-12">
+                <main className="container flex flex-col min-h-full mt-8 mb-12 h-fit">
                   {children}
                 </main>
                 <Footer />

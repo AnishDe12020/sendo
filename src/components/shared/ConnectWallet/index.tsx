@@ -137,7 +137,6 @@ export const ConnectWallet = forwardRef<HTMLButtonElement>((props, ref) => {
               <Button
                 key={wallet.adapter.name}
                 onClick={(e) => {
-                  console.log(wallet.adapter.name);
                   select(wallet.adapter.name);
 
                   if (!e.defaultPrevented) {

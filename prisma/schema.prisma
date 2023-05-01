@@ -30,14 +30,15 @@ model Link {
   createdAt DateTime @default(now()) @map("created_at")
 
   amount    Float
-  depositTx String  @unique
-  claimed   Boolean @default(false)
+  depositTx String    @unique
+  claimed   Boolean   @default(false)
   token     Token
   decimals  Int?
   message   String?
   symbol    String?
   mint      String?
   claimTx   String?
+  claimedAt DateTime?
 
   createdBy   User   @relation(fields: [createdById], references: [id])
   createdById String @db.ObjectId

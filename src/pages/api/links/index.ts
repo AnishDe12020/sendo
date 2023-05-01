@@ -4,7 +4,7 @@ import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
-import { authOptions } from "./auth/[...nextauth]";
+import { authOptions } from "../auth/[...nextauth]";
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const { method } = req;
@@ -77,7 +77,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             );
 
           if (vaultAccountIndex < 0) {
-            console.log("vaultAccountIndex", vaultAccountIndex);
             return res.status(400).json({
               success: false,
               message: "Invalid transaction",
@@ -136,7 +135,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             );
 
           if (vaultAccountIndex < 0) {
-            console.log("vaultAccountIndex", vaultAccountIndex);
             return res.status(400).json({
               success: false,
               message: "Invalid transaction",
@@ -144,9 +142,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           }
 
           const { postTokenBalances, preTokenBalances } = tx.meta;
-
-          console.log("postTokenBalances", postTokenBalances);
-          console.log("preTokenBalances", preTokenBalances);
 
           const vaultPreTokenBalance = preTokenBalances?.find(
             (balance) =>

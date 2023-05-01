@@ -17,7 +17,7 @@ import z from "zod";
 import axios from "axios";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import {
   SUPPORTED_SPL_TOKENS,
   SUPPORTED_TOKENS_LIST,
@@ -31,13 +31,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import {
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
 import {
   createTransferCheckedInstruction,
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
 import { useSession } from "next-auth/react";
 import { ConnectWallet } from "./shared/ConnectWallet";
+import { useRouter } from "next/navigation";
 
 interface CreateLinkFormSchema {
   amount: number;
@@ -81,9 +87,11 @@ const CreateLinkDialog = () => {
 
   const [isCreatingLink, setIsCreatingLink] = useState(false);
 
-  const onSubmit = handleSubmit(async (data) => {
-    console.log(data);
+  const router = useRouter();
 
+  const [_isPending, startTransition] = useTransition();
+
+  const onSubmit = handleSubmit(async (data) => {
     setIsCreatingLink(true);
 
     if (!publicKey) {
@@ -100,14 +108,10 @@ const CreateLinkDialog = () => {
       return;
     }
 
-    toast.promise(
+    const toastId = toast.promise(
       async () => {
-        let splToken;
-
         if (isSPL) {
-          splToken = SUPPORTED_SPL_TOKENS[data.type as SPL_TOKEN_ENUM];
-
-          console.log(splToken);
+          const splToken = SUPPORTED_SPL_TOKENS[data.type as SPL_TOKEN_ENUM];
 
           const userATA = getAssociatedTokenAddressSync(
             new PublicKey(splToken.address),
@@ -131,7 +135,7 @@ const CreateLinkDialog = () => {
 
           const latestBlockhash = await connection.getLatestBlockhash();
 
-          const depositTxSig = await sendTransaction(depositTx, connection);
+          depositTxSig = await sendTransaction(depositTx, connection);
 
           await connection.confirmTransaction(
             {
@@ -153,8 +157,6 @@ const CreateLinkDialog = () => {
             symbol: splToken.symbol,
           });
 
-          console.log(res.data);
-
           if (res.status != 200) {
             throw new Error("Error creating link");
           }
@@ -163,13 +165,13 @@ const CreateLinkDialog = () => {
             SystemProgram.transfer({
               fromPubkey: publicKey,
               toPubkey: new PublicKey(vaultPublicKey),
-              lamports: data.amount * 10 ** 9,
+              lamports: data.amount * LAMPORTS_PER_SOL,
             })
           );
 
           const latestBlockhash = await connection.getLatestBlockhash();
 
-          const depositTxSig = await sendTransaction(depositTx, connection);
+          depositTxSig = await sendTransaction(depositTx, connection);
 
           await connection.confirmTransaction(
             {
@@ -188,18 +190,33 @@ const CreateLinkDialog = () => {
             token: Token.SOL,
           });
 
-          console.log(res.data);
-
           if (res.status != 200) {
             throw new Error("Error creating link");
           }
         }
+
+        toast.success("Link created successfully", {
+          id: toastId,
+          action: {
+            label: "View Transaction",
+            onClick: () => {
+              window.open(
+                `https://explorer.solana.com/tx/${depositTxSig}`,
+                "_blank"
+              );
+            },
+          },
+        });
+
+        startTransition(() => {
+          router.refresh();
+        });
       },
       {
         loading: "Creating link...",
         success: () => {
-          setIsCreatingLink(false);
           reset();
+          setIsCreatingLink(false);
           return "Link created successfully";
         },
         error: () => {
@@ -208,6 +225,8 @@ const CreateLinkDialog = () => {
         },
       }
     );
+
+    let depositTxSig: string | undefined = undefined;
   });
 
   return publicKey && user?.user?.name ? (

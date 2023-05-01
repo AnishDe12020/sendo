@@ -19,7 +19,6 @@ export const authOptions = (
         // @ts-ignore
         async authorize(credentials) {
           if (!credentials) {
-            console.log(`credentials not provided`);
             throw new Error("user can not be authenticated");
           }
 
@@ -38,7 +37,6 @@ export const authOptions = (
           );
 
           if (!result) {
-            console.log(`authentication failed`);
             throw new Error("user can not be authenticated");
           }
 
