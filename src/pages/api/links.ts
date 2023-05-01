@@ -3,9 +3,22 @@ import { Token } from "@prisma/client";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./auth/[...nextauth]";
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const { method } = req;
+
+  const session = await getServerSession(req, res, authOptions as any);
+
+  if (!session) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
+  }
+
+  const { user } = session as any;
 
   switch (method) {
     case "POST": {
@@ -19,6 +32,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       }
 
       const { amount, token, depositTxSig, address, message } = body;
+
+      if (!user.name === address) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
 
       if (!amount || !token || !depositTxSig || !address) {
         return res.status(400).json({
