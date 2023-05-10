@@ -79,6 +79,8 @@ const CreateLinkDialog = () => {
     },
   });
 
+  const [isOpen, setIsOpen] = useState(false);
+
   const { data: user } = useSession();
 
   const { publicKey, sendTransaction } = useWallet();
@@ -230,7 +232,7 @@ const CreateLinkDialog = () => {
   });
 
   return publicKey && user?.user?.name ? (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button>Create new link</Button>
       </DialogTrigger>

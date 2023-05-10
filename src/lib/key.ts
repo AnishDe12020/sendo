@@ -51,4 +51,6 @@ export const decrypt = (encryptedData: string, key: Buffer, iv: string) => {
   let decrypted = decipher.update(encryptedData, "hex", "utf8");
 
   decrypted += decipher.final("utf8");
+
+  return decrypted;
 };

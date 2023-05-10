@@ -10,6 +10,7 @@ import {
 } from "@/lib/key";
 import base58 from "bs58";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import useWebWallet from "@/hooks/useWebWallet";
 
 interface SetPasswordConfirmProps {
   setStep: (step: WalletSetupSteps) => void;
@@ -24,30 +25,27 @@ const SetPasswordConfirm = ({
 }: SetPasswordConfirmProps) => {
   const [confirmedPassword, setConfirmedPassword] = useState<string>("");
 
+  const { setKeyData } = useWebWallet();
+
   const handleConfirmPassword = () => {
     if (password === confirmedPassword) {
       toast.success("Password matches!");
 
       const pbkdf2Key = generateKey(password);
 
-      const privateKey = getPrimaryPrivateKeyFromMnemonic(mnemonic);
-
-      const encryptedPrivateKey = encrypt(
-        base58.encode(privateKey),
-        pbkdf2Key.key
-      );
+      const encryptedMnemonic = encrypt(mnemonic, pbkdf2Key.key);
 
       const keyData = {
-        encryptedPrivateKey: encryptedPrivateKey.encryptedData,
-        iv: encryptedPrivateKey.iv,
+        encryptedMnemonic: encryptedMnemonic.encryptedData,
+        iv: encryptedMnemonic.iv,
         salt: pbkdf2Key.salt,
       };
 
-      localStorage.setItem("keyData", JSON.stringify(keyData));
+      setKeyData(keyData);
 
       setStep(WalletSetupSteps.Done);
     } else {
-      toast.success("Passwords do not match");
+      toast.error("Passwords do not match");
     }
   };
 

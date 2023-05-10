@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth/next";
 
 import LinkCard from "@/components/LinkCard";
 
-export default async function Home() {
+const DashboardPage = async () => {
   const session = await getServerSession(authOptions as any);
 
   const links = await prisma.link.findMany({
@@ -17,16 +17,21 @@ export default async function Home() {
   });
 
   return (
-    <div className="flex flex-col items-center w-full mt-8 space-y-6">
-      <h1 className="mb-16 text-5xl font-bold">Onsol Demo</h1>
-
+    <div className="flex flex-col items-center w-full mt-8">
       <CreateLinkDialog />
 
-      <div className="flex flex-col items-center w-2/3 gap-6 my-12">
-        {links.map((link) => (
-          <LinkCard key={link.id} link={link} />
-        ))}
+      <div className="flex flex-col items-center w-2/3 gap-6 my-12 mt-12">
+        {links.length > 0 ? (
+          links.map((link) => <LinkCard key={link.id} link={link} />)
+        ) : (
+          <p className="text-xl text-center text-muted-foreground">
+            You don't have any links yet. Create one by clicking on the button
+            above.
+          </p>
+        )}
       </div>
     </div>
   );
-}
+};
+
+export default DashboardPage;
