@@ -72,7 +72,7 @@ const LinkCard = ({ link }: LinkCardProps) => {
           variant="secondary"
           size="sm"
           onClick={() => {
-            window.open(window.location.origin + "/links/" + link.id, "_blank");
+            window.open(window.location.origin + "/claim/" + link.id, "_blank");
           }}
         >
           <ExternalLinkIcon className="w-4 h-4 mr-2" />
@@ -83,7 +83,7 @@ const LinkCard = ({ link }: LinkCardProps) => {
           size="sm"
           onClick={() => {
             navigator.clipboard.writeText(
-              window.location.origin + "/links/" + link.id
+              window.location.origin + "/claim/" + link.id
             );
             toast.success("Copied to clipboard");
           }}

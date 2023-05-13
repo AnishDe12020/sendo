@@ -14,12 +14,6 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
             <SessionProviderWrapper>
               <Toaster />
               {children}
-              {/* <Header />
-                <Toaster />
-                <main className="container flex flex-col min-h-full mt-8 mb-12 h-fit">
-                  {children}
-                </main>
-                <Footer /> */}
             </SessionProviderWrapper>
           </SolanaProvider>
         </ThemeProvider>

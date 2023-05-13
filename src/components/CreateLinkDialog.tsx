@@ -213,6 +213,8 @@ const CreateLinkDialog = () => {
         startTransition(() => {
           router.refresh();
         });
+
+        setIsOpen(false);
       },
       {
         loading: "Creating link...",
