@@ -4,7 +4,7 @@ import { Header } from "@/components/layout/Header";
 const AdminLayout = ({ children }: { children: React.ReactNode }) => (
   <>
     <Header />
-    <main className="container flex flex-col items-center min-h-full mt-8 mb-12 h-fit">
+    <main className="flex flex-col items-center min-h-full mx-6 mt-8 mb-12 h-fit">
       {children}
     </main>
     <Footer />

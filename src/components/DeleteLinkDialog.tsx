@@ -1,8 +1,5 @@
 "use client";
 
-import { Link } from "@prisma/client";
-import { useState } from "react";
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,12 +19,11 @@ import { Button } from "./ui/button";
 import { TrashIcon } from "lucide-react";
 import { toast } from "sonner";
 interface DeleteLinkDialogProps {
-  link: Link;
+  id: string;
+  claimed: boolean;
 }
 
-const DeleteLinkDialog = ({ link }: DeleteLinkDialogProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-
+const DeleteLinkDialog = ({ id, claimed }: DeleteLinkDialogProps) => {
   const router = useRouter();
 
   const [_isPending, startTransition] = useTransition();
@@ -35,7 +31,7 @@ const DeleteLinkDialog = ({ link }: DeleteLinkDialogProps) => {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="sm" disabled={link.claimed}>
+        <Button variant="destructive" size="sm" disabled={claimed}>
           <TrashIcon className="w-4 h-4 mr-2" />
           Delete
         </Button>
@@ -62,9 +58,7 @@ const DeleteLinkDialog = ({ link }: DeleteLinkDialogProps) => {
               onClick={async () => {
                 const toastId = toast.promise(
                   async () => {
-                    const { data } = await axios.delete(
-                      `/api/links/${link.id}`
-                    );
+                    const { data } = await axios.delete(`/api/links/${id}`);
 
                     if (!data.success) {
                       throw new Error("Error deleting link");
