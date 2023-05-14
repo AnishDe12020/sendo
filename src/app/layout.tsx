@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/wrappers/ThemeProvider";
 import "@/styles/globals.css";
 import SessionProviderWrapper from "@/components/wrappers/SessionProvider";
 import Toaster from "@/components/wrappers/SonnerToaster";
+import Web3AuthProvider from "@/components/wrappers/Web3AuthProvider";
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -12,8 +13,10 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <SolanaProvider>
             <SessionProviderWrapper>
-              <Toaster />
-              {children}
+              <Web3AuthProvider>
+                <Toaster />
+                {children}
+              </Web3AuthProvider>
             </SessionProviderWrapper>
           </SolanaProvider>
         </ThemeProvider>

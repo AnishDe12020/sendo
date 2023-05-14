@@ -3,7 +3,6 @@ import { prisma } from "@/lib/db";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import { getServerSession } from "next-auth/next";
 
-import LinkCard from "@/components/LinkCard";
 import LinksTable from "@/components/LinksTable";
 
 const DashboardPage = async () => {
