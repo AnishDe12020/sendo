@@ -95,6 +95,19 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             });
           }
 
+          const links = await prisma.link.findMany({
+            where: {
+              depositTx: depositTxSig,
+            },
+          });
+
+          if (links.length > 0) {
+            return res.status(400).json({
+              success: false,
+              message: "Link with same deposit transaction already exists",
+            });
+          }
+
           const link = await prisma.link.create({
             data: {
               amount,

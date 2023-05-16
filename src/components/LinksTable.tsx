@@ -23,6 +23,7 @@ import { Button } from "./ui/button";
 import { ClipboardIcon, ExternalLinkIcon } from "lucide-react";
 import { toast } from "sonner";
 import DeleteLinkDialog from "./DeleteLinkDialog";
+import { useSession } from "next-auth/react";
 
 interface LinksTableProps {
   links: Link[];
@@ -30,6 +31,8 @@ interface LinksTableProps {
 
 const LinksTable = ({ links }: LinksTableProps) => {
   const columnHelper = createColumnHelper<Link>();
+
+  const { data: user } = useSession();
 
   const columns = [
     columnHelper.accessor("amount", {
@@ -145,46 +148,49 @@ const LinksTable = ({ links }: LinksTableProps) => {
 
   const { rows } = table.getRowModel();
 
-  return links.length > 0 ? (
-    <div className="w-full px-4 mt-8 overflow-x-auto border rounded-sm">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          ))}
-        </TableHeader>
+  return (
+    user &&
+    (links.length > 0 ? (
+      <div className="w-full p-4 mt-8 overflow-x-auto border rounded-sm">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
 
-        <TableBody>
-          {rows.map((row) => (
-            <TableRow key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  ) : (
-    <p className="text-xl text-center text-muted-foreground">
-      You don&apos;t have any links yet. Create one by clicking on the button
-      above.
-    </p>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    ) : (
+      <p className="mt-8 text-xl text-center text-muted-foreground">
+        You don&apos;t have any links yet. Create one by clicking on the button
+        above.
+      </p>
+    ))
   );
 };
 
