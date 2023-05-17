@@ -3,17 +3,25 @@ import { WALLET_ADAPTERS } from "@web3auth/base";
 import { useAtom } from "jotai";
 import RPC from "@/lib/web3authSolanaRPC";
 import { useAsyncMemo } from "use-async-memo";
+import { useState } from "react";
 
 const useWeb3Auth = () => {
   const [web3auth, setWeb3Auth] = useAtom(web3AuthAtom);
   const [provider, setProvider] = useAtom(web3AuthProviderAtom);
 
+  const [isLoadingAddress, setLoading] = useState<boolean>(false);
+
   const address = useAsyncMemo(
     async () => {
+      setLoading(true);
+
       const accounts = await getAccounts();
       if (!accounts || accounts.length === 0) {
+        setLoading(false);
         return null;
       }
+
+      setLoading(false);
 
       return accounts[0];
     },
@@ -128,6 +136,7 @@ const useWeb3Auth = () => {
     signMessage,
     getPrivateKey,
     address,
+    isLoadingAddress,
   };
 };
 
