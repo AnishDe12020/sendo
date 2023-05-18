@@ -23,10 +23,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { SPL_TOKEN_ENUM, SUPPORTED_SPL_TOKENS, SUPPORTED_TOKENS_LIST } from "@/lib/tokens";
+import {
+  SPL_TOKEN_ENUM,
+  SUPPORTED_SPL_TOKENS,
+  SUPPORTED_TOKENS_LIST,
+} from "@/lib/tokens";
 import useWeb3Auth from "@/hooks/useWeb3Auth";
 import { toast } from "sonner";
-import { getAssociatedTokenAddressSync, getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
+import {
+  getAssociatedTokenAddressSync,
+  getOrCreateAssociatedTokenAccount,
+} from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 
 interface SendFormSchema {
@@ -87,19 +94,15 @@ const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
 
       try {
         // let transferSig: string | undefined = undefined;
-
         // if (isSPL) {
         //     const splToken = SUPPORTED_SPL_TOKENS[data.token as SPL_TOKEN_ENUM];
-    
         //     const userATA = getAssociatedTokenAddressSync(
         //       new PublicKey(splToken.address),
         //       new PublicKey(address)
         //     );
-
         //     const recipientATA = getOrCreateAssociatedTokenAccount(
-
         //     )
-        }
+        // }
       } catch (error) {
         console.error(error);
         toast.error("Something went wrong");
