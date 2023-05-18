@@ -23,13 +23,22 @@ export const DesktopNav = () => {
       </Link>
       <nav className="flex items-center space-x-6 text-sm font-medium">
         <Link
-          href="/docs"
+          href="/dashboard"
           className={cn(
             "transition-colors hover:text-foreground/80",
-            pathname === "/docs" ? "text-foreground" : "text-foreground/60"
+            pathname === "/dashboard" ? "text-foreground" : "text-foreground/60"
           )}
         >
-          Documentation
+          Dashboard
+        </Link>
+        <Link
+          href="/wallet"
+          className={cn(
+            "transition-colors hover:text-foreground/80",
+            pathname === "/wallet" ? "text-foreground" : "text-foreground/60"
+          )}
+        >
+          Wallet
         </Link>
       </nav>
     </div>

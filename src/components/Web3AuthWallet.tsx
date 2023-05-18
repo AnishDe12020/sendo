@@ -14,6 +14,11 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import axios from "axios";
 import { Icons } from "./icons";
 import PublicKeyDialog from "./PublicKeyDialog";
+import { Button } from "./ui/button";
+import { toast } from "sonner";
+import { CopyIcon } from "lucide-react";
+import { truncatePubkey } from "@/utils/truncate";
+import SendDialog from "./SendDialog";
 
 const getSOL = async (address: string, connection: Connection) => {
   if (!address) {
@@ -159,16 +164,48 @@ const Web3AuthWallet = () => {
     <div className="flex flex-col items-center w-full">
       {walletData && address ? (
         <>
-          <div className="flex items-center justify-between w-full p-4 bg-secondary rounded-xl">
-            <div className="flex items-center justify-between">
-              <p className="text-xl font-bold">${walletData?.netWorth}</p>
-              <p className="ml-2">(net worth)</p>
+          <div className="w-full p-4 bg-secondary rounded-xl">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center justify-between">
+                <p className="text-xl font-bold">${walletData?.netWorth}</p>
+                <p className="ml-2">(net worth)</p>
+              </div>
+
+              <Button
+                onClick={() => {
+                  navigator.clipboard.writeText(address);
+                  toast.success("Copied to clipboard");
+                }}
+                variant="ghost"
+              >
+                <CopyIcon className="w-4 h-4 mr-2" />
+                <span>{truncatePubkey(address)}</span>
+              </Button>
             </div>
 
-            <PublicKeyDialog address={address} />
+            <div className="flex items-center justify-between w-full gap-2 mt-4">
+              <SendDialog
+                sol={walletData.solData?.inSOL ?? 0}
+                tokensAvailable={
+                  walletData.tokens
+                    ? walletData.tokens.map((t) => {
+                        return {
+                          symbol: t.symbol,
+                          mint: t.mintAddress,
+                          amountAvailable: t.balance,
+                        };
+                      })
+                    : []
+                }
+                className="w-full"
+              />
+              <PublicKeyDialog className="w-full" address={address}>
+                Deposit
+              </PublicKeyDialog>
+            </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center w-full p-4 mt-4 bg-secondary rounded-xl">
+          <div className="flex flex-col items-center justify-center w-full gap-2 p-4 mt-4 bg-secondary rounded-xl">
             {walletData?.solData && (
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">

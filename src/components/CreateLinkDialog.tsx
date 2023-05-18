@@ -110,127 +110,115 @@ const CreateLinkDialog = () => {
       return;
     }
 
-    const toastId = toast.promise(
-      async () => {
-        if (isSPL) {
-          const splToken = SUPPORTED_SPL_TOKENS[data.type as SPL_TOKEN_ENUM];
+    try {
+      let depositTxSig: string | undefined = undefined;
 
-          const userATA = getAssociatedTokenAddressSync(
+      if (isSPL) {
+        const splToken = SUPPORTED_SPL_TOKENS[data.type as SPL_TOKEN_ENUM];
+
+        const userATA = getAssociatedTokenAddressSync(
+          new PublicKey(splToken.address),
+          publicKey
+        );
+        const valutATA = getAssociatedTokenAddressSync(
+          new PublicKey(splToken.address),
+          new PublicKey(vaultPublicKey)
+        );
+
+        const depositTx = new Transaction().add(
+          createTransferCheckedInstruction(
+            userATA,
             new PublicKey(splToken.address),
-            publicKey
-          );
-          const valutATA = getAssociatedTokenAddressSync(
-            new PublicKey(splToken.address),
-            new PublicKey(vaultPublicKey)
-          );
+            valutATA,
+            publicKey,
+            data.amount * 10 ** splToken.decimals,
+            splToken.decimals
+          )
+        );
 
-          const depositTx = new Transaction().add(
-            createTransferCheckedInstruction(
-              userATA,
-              new PublicKey(splToken.address),
-              valutATA,
-              publicKey,
-              data.amount * 10 ** splToken.decimals,
-              splToken.decimals
-            )
-          );
+        const latestBlockhash = await connection.getLatestBlockhash();
 
-          const latestBlockhash = await connection.getLatestBlockhash();
+        depositTxSig = await sendTransaction(depositTx, connection);
 
-          depositTxSig = await sendTransaction(depositTx, connection);
-
-          await connection.confirmTransaction(
-            {
-              signature: depositTxSig,
-              blockhash: latestBlockhash.blockhash,
-              lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-            },
-            "processed"
-          );
-
-          const res = await axios.post("/api/links", {
-            amount: data.amount,
-            message: data.message,
-            address: publicKey.toBase58(),
-            depositTxSig,
-            token: Token.SPL,
-            mint: splToken.address,
-            decimals: splToken.decimals,
-            symbol: splToken.symbol,
-          });
-
-          if (res.status != 200) {
-            throw new Error("Error creating link");
-          }
-        } else {
-          const depositTx = new Transaction().add(
-            SystemProgram.transfer({
-              fromPubkey: publicKey,
-              toPubkey: new PublicKey(vaultPublicKey),
-              lamports: data.amount * LAMPORTS_PER_SOL,
-            })
-          );
-
-          const latestBlockhash = await connection.getLatestBlockhash();
-
-          depositTxSig = await sendTransaction(depositTx, connection);
-
-          await connection.confirmTransaction(
-            {
-              signature: depositTxSig,
-              blockhash: latestBlockhash.blockhash,
-              lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-            },
-            "processed"
-          );
-
-          const res = await axios.post("/api/links", {
-            amount: data.amount,
-            message: data.message,
-            address: publicKey.toBase58(),
-            depositTxSig,
-            token: Token.SOL,
-          });
-
-          if (res.status != 200) {
-            throw new Error("Error creating link");
-          }
-        }
-
-        toast.success("Link created successfully", {
-          id: toastId,
-          action: {
-            label: "View Transaction",
-            onClick: () => {
-              window.open(
-                `https://explorer.solana.com/tx/${depositTxSig}`,
-                "_blank"
-              );
-            },
+        await connection.confirmTransaction(
+          {
+            signature: depositTxSig,
+            blockhash: latestBlockhash.blockhash,
+            lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
           },
+          "processed"
+        );
+
+        const res = await axios.post("/api/links", {
+          amount: data.amount,
+          message: data.message,
+          address: publicKey.toBase58(),
+          depositTxSig,
+          token: Token.SPL,
+          mint: splToken.address,
+          decimals: splToken.decimals,
+          symbol: splToken.symbol,
         });
 
-        startTransition(() => {
-          router.refresh();
+        if (res.status != 200) {
+          throw new Error("Error creating link");
+        }
+      } else {
+        const depositTx = new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: new PublicKey(vaultPublicKey),
+            lamports: data.amount * LAMPORTS_PER_SOL,
+          })
+        );
+
+        const latestBlockhash = await connection.getLatestBlockhash();
+
+        depositTxSig = await sendTransaction(depositTx, connection);
+
+        await connection.confirmTransaction(
+          {
+            signature: depositTxSig,
+            blockhash: latestBlockhash.blockhash,
+            lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+          },
+          "processed"
+        );
+
+        const res = await axios.post("/api/links", {
+          amount: data.amount,
+          message: data.message,
+          address: publicKey.toBase58(),
+          depositTxSig,
+          token: Token.SOL,
         });
 
-        setIsOpen(false);
-      },
-      {
-        loading: "Creating link...",
-        success: () => {
-          reset();
-          setIsCreatingLink(false);
-          return "Link created successfully";
-        },
-        error: () => {
-          setIsCreatingLink(false);
-          return "Error creating link";
-        },
+        if (res.status != 200) {
+          throw new Error("Error creating link");
+        }
       }
-    );
 
-    let depositTxSig: string | undefined = undefined;
+      toast.success("Link created successfully", {
+        action: {
+          label: "View Transaction",
+          onClick: () => {
+            window.open(
+              `https://explorer.solana.com/tx/${depositTxSig}`,
+              "_blank"
+            );
+          },
+        },
+      });
+
+      startTransition(() => {
+        router.refresh();
+      });
+
+      setIsOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Error creating link");
+    }
   });
 
   return publicKey && user?.user?.name ? (

@@ -10,46 +10,56 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { createQR } from "@/lib/qr";
-import { useEffect, useRef, useState } from "react";
+import { HTMLAttributes, forwardRef, useEffect, useRef, useState } from "react";
 import { truncatePubkey } from "@/utils/truncate";
 import { toast } from "sonner";
 import { CopyIcon } from "lucide-react";
 
-const PublicKeyDialog = ({ address }: { address: string }) => {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button>View Public Key</Button>
-      </DialogTrigger>
+interface PublicKeyDialogProps extends HTMLAttributes<HTMLButtonElement> {
+  address: string;
+}
 
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Public Key</DialogTitle>
-          <DialogDescription>
-            This is your google account wallet&apos;s public key. You can use
-            this to receive crypto (SOL and other tokens) as well as NFTs.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex flex-col items-center justify-center">
-          <QRCode address={address} />
-
-          <Button
-            onClick={() => {
-              navigator.clipboard.writeText(address);
-              toast.success("Copied to clipboard");
-            }}
-            variant="secondary"
-            className="mt-4"
-          >
-            <CopyIcon className="w-4 h-4 mr-2" />
-            <span>{truncatePubkey(address)}</span>
+const PublicKeyDialog = forwardRef<HTMLButtonElement, PublicKeyDialogProps>(
+  ({ address, children, ...props }, ref) => {
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button ref={ref} {...props}>
+            {children ?? "View Public Key"}
           </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
+        </DialogTrigger>
+
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Public Key</DialogTitle>
+            <DialogDescription>
+              This is your google account wallet&apos;s public key. You can use
+              this to receive crypto (SOL and other tokens) as well as NFTs.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center justify-center">
+            <QRCode address={address} />
+
+            <Button
+              onClick={() => {
+                navigator.clipboard.writeText(address);
+                toast.success("Copied to clipboard");
+              }}
+              variant="secondary"
+              className="mt-4"
+            >
+              <CopyIcon className="w-4 h-4 mr-2" />
+              <span>{truncatePubkey(address)}</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+);
+
+PublicKeyDialog.displayName = "PublicKeyDialog";
 
 const QRCode = ({ address }: { address: string }) => {
   const qrRef = useRef<HTMLDivElement>(null);
