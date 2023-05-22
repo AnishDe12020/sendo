@@ -1,11 +1,12 @@
 "use client";
 
-import { HTMLAttributes, forwardRef, useState, useTransition } from "react";
+import { HTMLAttributes, forwardRef, useState } from "react";
 import { Button } from "./ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -13,7 +14,6 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Controller, useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import {
@@ -31,10 +31,19 @@ import {
 import useWeb3Auth from "@/hooks/useWeb3Auth";
 import { toast } from "sonner";
 import {
+  createAssociatedTokenAccountInstruction,
+  createTransferCheckedInstruction,
+  getAccount,
   getAssociatedTokenAddressSync,
-  getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
-import { PublicKey } from "@solana/web3.js";
+import {
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface SendFormSchema {
   amount: number;
@@ -49,8 +58,8 @@ const sendFormSchemaResolver = zodResolver(
         .number({ description: "Amount should be a number" })
         .positive({ message: "Amount should be positive" })
         .min(0.0000001, { message: "Amount should be greater than 0.0000001" }),
-      type: z.string(),
-      recipient: z.string().length(44, "Recipient should be a public key"),
+      token: z.string(),
+      recipient: z.string(),
     })
     .required()
 );
@@ -62,6 +71,10 @@ interface SendDialogProps extends HTMLAttributes<HTMLButtonElement> {
 
 const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
   ({ children, sol, tokensAvailable, ...props }, ref) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    const queryClient = useQueryClient();
+
     const {
       register,
       handleSubmit,
@@ -76,13 +89,11 @@ const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
       },
     });
 
-    const router = useRouter();
-
-    const [_isPending, startTransition] = useTransition();
-
     const [isSending, setIsSending] = useState(false);
 
     const { address, sendTransaction } = useWeb3Auth();
+
+    const { connection } = useConnection();
 
     const onSubmit = handleSubmit(async (data) => {
       if (!address) {
@@ -92,25 +103,128 @@ const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
 
       const isSPL = data.token !== "SOL";
 
+      setIsSending(true);
+
       try {
-        // let transferSig: string | undefined = undefined;
-        // if (isSPL) {
-        //     const splToken = SUPPORTED_SPL_TOKENS[data.token as SPL_TOKEN_ENUM];
-        //     const userATA = getAssociatedTokenAddressSync(
-        //       new PublicKey(splToken.address),
-        //       new PublicKey(address)
-        //     );
-        //     const recipientATA = getOrCreateAssociatedTokenAccount(
-        //     )
-        // }
+        let transferSig: string | undefined = undefined;
+        if (isSPL) {
+          const splToken = SUPPORTED_SPL_TOKENS[data.token as SPL_TOKEN_ENUM];
+          const userATA = getAssociatedTokenAddressSync(
+            new PublicKey(splToken.address),
+            new PublicKey(address)
+          );
+
+          const recipientATA = getAssociatedTokenAddressSync(
+            new PublicKey(splToken.address),
+            new PublicKey(data.recipient)
+          );
+
+          const tokenAccount = await getAccount(connection, recipientATA);
+
+          const tx: Transaction = new Transaction();
+
+          if (!tokenAccount.isInitialized) {
+            const createATAIx = createAssociatedTokenAccountInstruction(
+              new PublicKey(address),
+              recipientATA,
+              new PublicKey(data.recipient),
+              new PublicKey(splToken.address)
+            );
+
+            tx.add(createATAIx);
+          }
+
+          const transferIx = createTransferCheckedInstruction(
+            userATA,
+            new PublicKey(splToken.address),
+            recipientATA,
+            new PublicKey(address),
+            data.amount * 10 ** splToken.decimals,
+            splToken.decimals
+          );
+
+          tx.add(transferIx);
+
+          const latestBlockhash = await connection.getLatestBlockhash();
+
+          tx.recentBlockhash = latestBlockhash.blockhash;
+          tx.feePayer = new PublicKey(address);
+
+          transferSig = await sendTransaction(tx, connection);
+
+          if (!transferSig) {
+            toast.error("Something went wrong");
+            return;
+          }
+
+          await connection.confirmTransaction(
+            {
+              signature: transferSig,
+              blockhash: latestBlockhash.blockhash,
+              lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+            },
+            "processed"
+          );
+        } else {
+          const transferTx = new Transaction().add(
+            SystemProgram.transfer({
+              fromPubkey: new PublicKey(address),
+              toPubkey: new PublicKey(data.recipient),
+              lamports: data.amount * LAMPORTS_PER_SOL,
+            })
+          );
+
+          const latestBlockhash = await connection.getLatestBlockhash();
+
+          transferTx.recentBlockhash = latestBlockhash.blockhash;
+          transferTx.feePayer = new PublicKey(address);
+
+          transferSig = await sendTransaction(transferTx, connection);
+
+          if (!transferSig) {
+            toast.error("Something went wrong");
+            return;
+          }
+
+          await connection.confirmTransaction(
+            {
+              signature: transferSig,
+              blockhash: latestBlockhash.blockhash,
+              lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+            },
+            "processed"
+          );
+        }
+
+        toast.success("Assets transferred", {
+          action: {
+            label: "View Transaction",
+            onClick: () => {
+              window.open(
+                `https://explorer.solana.com/tx/${transferSig}`,
+                "_blank"
+              );
+            },
+          },
+        });
+
+        queryClient.refetchQueries({
+          queryKey: ["web3auth-wallet-data"],
+        });
+
+        reset();
+
+        setIsOpen(false);
       } catch (error) {
         console.error(error);
         toast.error("Something went wrong");
       }
+
+      setIsSending(false);
     });
 
     return (
-      <Dialog>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <Button ref={ref} {...props}>
             {children ?? "Send"}
@@ -125,81 +239,93 @@ const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
             </DialogDescription>
           </DialogHeader>
 
-          <form className="flex flex-col gap-6">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="amount" required>
-                Amount
-              </Label>
-              <Input
-                {...(register("amount"),
-                {
-                  onChange: (e) =>
-                    setValue("amount", parseFloat(e.target.value)),
-                })}
-                step="any"
-                type="number"
-                placeholder="Amount"
-              />
-              {errors.amount && (
-                <span className="text-red-500">{errors.amount.message}</span>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="type" required>
-                Token
-              </Label>
-              <Controller
-                control={control}
-                name="token"
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a token" />
-                    </SelectTrigger>
-
-                    <SelectContent>
-                      {SUPPORTED_TOKENS_LIST.filter((token) => {
-                        const isAvailable = tokensAvailable.find(
-                          (tokenAvailable) =>
-                            tokenAvailable.symbol === token.symbol
-                        );
-
-                        return isAvailable;
-                      }).map((token) => (
-                        <SelectItem
-                          key={token.name}
-                          value={token.symbol}
-                          className="flex"
-                        >
-                          <span>{token.symbol}</span>
-                        </SelectItem>
-                      ))}
-                      {sol > 0 && (
-                        <SelectItem value="SOL" className="flex">
-                          <span>SOL</span>
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
+          <form onSubmit={onSubmit}>
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="amount" required>
+                  Amount
+                </Label>
+                <Input
+                  {...(register("amount"),
+                  {
+                    onChange: (e) =>
+                      setValue("amount", parseFloat(e.target.value)),
+                  })}
+                  step="any"
+                  type="number"
+                  placeholder="Amount"
+                />
+                {errors.amount && (
+                  <span className="text-red-500">{errors.amount.message}</span>
                 )}
-              />
-              {errors.token && (
-                <span className="text-red-500">{errors.token.message}</span>
-              )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="type" required>
+                  Token
+                </Label>
+                <Controller
+                  control={control}
+                  name="token"
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a token" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        {SUPPORTED_TOKENS_LIST.filter((token) => {
+                          const isAvailable = tokensAvailable.find(
+                            (tokenAvailable) =>
+                              tokenAvailable.symbol === token.symbol
+                          );
+
+                          return isAvailable;
+                        }).map((token) => (
+                          <SelectItem
+                            key={token.name}
+                            value={token.symbol}
+                            className="flex"
+                          >
+                            <span>{token.symbol}</span>
+                          </SelectItem>
+                        ))}
+                        {sol > 0 && (
+                          <SelectItem value="SOL" className="flex">
+                            <span>SOL</span>
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.token && (
+                  <span className="text-red-500">{errors.token.message}</span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="message" required>
+                  Address
+                </Label>
+                <Input
+                  {...register("recipient")}
+                  type="text"
+                  placeholder="Public Key of the recipient wallet you are sending to"
+                />
+                {errors.recipient && (
+                  <span className="text-red-500">
+                    {errors.recipient.message}
+                  </span>
+                )}
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="message">Address</Label>
-              <Input
-                {...register("recipient")}
-                type="text"
-                placeholder="Public Key of the recipient wallet you are sending to"
-              />
-              {errors.recipient && (
-                <span className="text-red-500">{errors.recipient.message}</span>
-              )}
-            </div>
+            <DialogFooter className="mt-4">
+              <Button type="submit" isLoading={isSending}>
+                {isSending ? "Sending..." : "Send"}
+              </Button>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

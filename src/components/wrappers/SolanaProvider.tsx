@@ -9,7 +9,6 @@ import {
   PhantomWalletAdapter,
   GlowWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
-import { clusterApiUrl } from "@solana/web3.js";
 import { useMemo } from "react";
 
 export const SolanaProvider = ({ children }: { children: React.ReactNode }) => {

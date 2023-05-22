@@ -1,5 +1,3 @@
-"use client";
-
 import useWeb3Auth from "@/hooks/useWeb3Auth";
 import { useConnection } from "@solana/wallet-adapter-react";
 import {
@@ -19,6 +17,7 @@ import { toast } from "sonner";
 import { CopyIcon } from "lucide-react";
 import { truncatePubkey } from "@/utils/truncate";
 import SendDialog from "./SendDialog";
+import { useQuery } from "@tanstack/react-query";
 
 const getSOL = async (address: string, connection: Connection) => {
   if (!address) {
@@ -138,8 +137,9 @@ const Web3AuthWallet = () => {
   const { address } = useWeb3Auth();
   const { connection } = useConnection();
 
-  const walletData = useAsyncMemo(
-    async () => {
+  const { data: walletData } = useQuery({
+    queryKey: ["web3auth-wallet-data"],
+    queryFn: async () => {
       if (!address) {
         return null;
       }
@@ -156,9 +156,7 @@ const Web3AuthWallet = () => {
         netWorth,
       };
     },
-    [address],
-    null
-  );
+  });
 
   return (
     <div className="flex flex-col items-center w-full">

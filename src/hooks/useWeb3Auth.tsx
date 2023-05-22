@@ -4,6 +4,7 @@ import { useAtom } from "jotai";
 import RPC from "@/lib/web3authSolanaRPC";
 import { useAsyncMemo } from "use-async-memo";
 import { useState } from "react";
+import { Connection, Transaction } from "@solana/web3.js";
 
 const useWeb3Auth = () => {
   const [web3auth, setWeb3Auth] = useAtom(web3AuthAtom);
@@ -91,23 +92,37 @@ const useWeb3Auth = () => {
     return balance;
   };
 
-  const sendTransaction = async () => {
+  const sendTransaction = async (
+    transaction: Transaction,
+    connection: Connection
+  ) => {
     if (!provider) {
       console.error("provider not initialized yet");
       return;
     }
     const rpc = new RPC(provider);
-    const receipt = await rpc.sendTransaction();
+    const receipt = await rpc.sendTransaction(transaction, connection);
     return receipt;
   };
 
-  const signMessage = async () => {
+  const signTransaction = async (transaction: Transaction) => {
+    if (!provider) {
+      console.error("provider not initialized yet");
+      return;
+    }
+
+    const rpc = new RPC(provider);
+    const signedTransaction = await rpc.signTransaction(transaction);
+    return signedTransaction;
+  };
+
+  const signMessage = async (message: Uint8Array) => {
     if (!provider) {
       console.error("provider not initialized yet");
       return;
     }
     const rpc = new RPC(provider);
-    const signedMessage = await rpc.signMessage();
+    const signedMessage = await rpc.signMessage(message);
     return signedMessage;
   };
 
@@ -133,6 +148,7 @@ const useWeb3Auth = () => {
     getAccounts,
     getBalance,
     sendTransaction,
+    signTransaction,
     signMessage,
     getPrivateKey,
     address,

@@ -5,6 +5,7 @@ import "@/styles/globals.css";
 import SessionProviderWrapper from "@/components/wrappers/SessionProvider";
 import Toaster from "@/components/wrappers/SonnerToaster";
 import Web3AuthProvider from "@/components/wrappers/Web3AuthProvider";
+import ReactQueryProvider from "@/components/wrappers/ReactQueryProvider";
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -14,8 +15,10 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
           <SolanaProvider>
             <SessionProviderWrapper>
               <Web3AuthProvider>
-                <Toaster />
-                {children}
+                <ReactQueryProvider>
+                  <Toaster />
+                  {children}
+                </ReactQueryProvider>
               </Web3AuthProvider>
             </SessionProviderWrapper>
           </SolanaProvider>

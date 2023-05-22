@@ -49,6 +49,12 @@ dependencies:
   '@solana/web3.js':
     specifier: ^1.76.0
     version: 1.76.0
+  '@tanstack/react-query':
+    specifier: ^4.29.7
+    version: 4.29.7(react-dom@18.2.0)(react-native@0.71.7)(react@18.2.0)
+  '@tanstack/react-query-devtools':
+    specifier: ^4.29.7
+    version: 4.29.7(@tanstack/react-query@4.29.7)(react-dom@18.2.0)(react@18.2.0)
   '@tanstack/react-table':
     specifier: ^8.9.1
     version: 8.9.1(react-dom@18.2.0)(react@18.2.0)
@@ -4069,6 +4075,51 @@ packages:
       tslib: 2.5.0
     dev: false
 
+  /@tanstack/match-sorter-utils@8.8.4:
+    resolution: {integrity: sha512-rKH8LjZiszWEvmi01NR72QWZ8m4xmXre0OOwlRGnjU01Eqz/QnN+cqpty2PJ0efHblq09+KilvyR7lsbzmXVEw==}
+    engines: {node: '>=12'}
+    dependencies:
+      remove-accents: 0.4.2
+    dev: false
+
+  /@tanstack/query-core@4.29.7:
+    resolution: {integrity: sha512-GXG4b5hV2Loir+h2G+RXhJdoZhJLnrBWsuLB2r0qBRyhWuXq9w/dWxzvpP89H0UARlH6Mr9DiVj4SMtpkF/aUA==}
+    dev: false
+
+  /@tanstack/react-query-devtools@4.29.7(@tanstack/react-query@4.29.7)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-fckNnBV6Kfbtq6EJqQen8oBjPqGFcOPS9SJmNKLbFLQgd7OpNIlA4M0r37iJYUY9m14/ESKc1wzKd36VfeiPjg==}
+    peerDependencies:
+      '@tanstack/react-query': 4.29.7
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      '@tanstack/match-sorter-utils': 8.8.4
+      '@tanstack/react-query': 4.29.7(react-dom@18.2.0)(react-native@0.71.7)(react@18.2.0)
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+      superjson: 1.12.3
+      use-sync-external-store: 1.2.0(react@18.2.0)
+    dev: false
+
+  /@tanstack/react-query@4.29.7(react-dom@18.2.0)(react-native@0.71.7)(react@18.2.0):
+    resolution: {integrity: sha512-ijBWEzAIo09fB1yd22slRZzprrZ5zMdWYzBnCg5qiXuFbH78uGN1qtGz8+Ed4MuhaPaYSD+hykn+QEKtQviEtg==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-native: '*'
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
+      react-native:
+        optional: true
+    dependencies:
+      '@tanstack/query-core': 4.29.7
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+      react-native: 0.71.7(@babel/core@7.21.4)(@babel/preset-env@7.21.4)(react@18.2.0)
+      use-sync-external-store: 1.2.0(react@18.2.0)
+    dev: false
+
   /@tanstack/react-table@8.9.1(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-yHs2m6lk5J5RNcu2dNtsDGux66wNXZjEgzxos6MRCX8gL+nqxeW3ZglqP6eANN0bGElPnjvqiUHGQvdACOr3Cw==}
     engines: {node: '>=12'}
@@ -6328,6 +6379,13 @@ packages:
     engines: {node: '>= 0.6'}
     dev: false
 
+  /copy-anything@3.0.4:
+    resolution: {integrity: sha512-MaQ9FwzlZ/KLeVCLhzI3rZw0EhrIryfZa3AyT4agVybR0DjlkDHA8898lamLD6kfkf9MMn8D+zDAUR4+GxaymQ==}
+    engines: {node: '>=12.13'}
+    dependencies:
+      is-what: 4.1.10
+    dev: false
+
   /copy-descriptor@0.1.1:
     resolution: {integrity: sha512-XgZ0pFcakEUlbwQEVNg3+QAis1FyTL3Qel9FYy8pSkQqoG3PNoT0bOCQtOXcOkur21r2Eq2kI+IE+gsmAEVlYw==}
     engines: {node: '>=0.10.0'}
@@ -8272,6 +8330,11 @@ packages:
     dependencies:
       call-bind: 1.0.2
       get-intrinsic: 1.2.0
+    dev: false
+
+  /is-what@4.1.10:
+    resolution: {integrity: sha512-JBy26nXqBUwzTfgj6T5Y/UgXSmRd+03FTq5v3P+N1cOmOtI1hz7dBn+ZfqM7c86qqWTNBEH98h3pkpmI6USnQA==}
+    engines: {node: '>=12.13'}
     dev: false
 
   /is-windows@1.0.2:
@@ -10635,6 +10698,10 @@ packages:
       jsesc: 0.5.0
     dev: false
 
+  /remove-accents@0.4.2:
+    resolution: {integrity: sha512-7pXIJqJOq5tFgG1A2Zxti3Ht8jJF337m4sowbuHsW30ZnkQFnDzy9qBNhgzX8ZLW4+UBcXiiR7SwR6pokHsxiA==}
+    dev: false
+
   /repeat-element@1.1.4:
     resolution: {integrity: sha512-LFiNfRcSu7KK3evMyYOuCzv3L10TW7yC1G2/+StMjK8Y6Vqd2MG7r/Qjw4ghtuCOjFvlnms/iMmLqpvW/ES/WQ==}
     engines: {node: '>=0.10.0'}
@@ -11338,6 +11405,13 @@ packages:
 
   /sudo-prompt@9.2.1:
     resolution: {integrity: sha512-Mu7R0g4ig9TUuGSxJavny5Rv0egCEtpZRNMrZaYS1vxkiIxGiGUwoezU3LazIQ+KE04hTrTfNPgxU5gzi7F5Pw==}
+    dev: false
+
+  /superjson@1.12.3:
+    resolution: {integrity: sha512-0j+U70KUtP8+roVPbwfqkyQI7lBt7ETnuA7KXbTDX3mCKiD/4fXs2ldKSMdt0MCfpTwiMxo20yFU3vu6ewETpQ==}
+    engines: {node: '>=10'}
+    dependencies:
+      copy-anything: 3.0.4
     dev: false
 
   /superstruct@0.14.2:
