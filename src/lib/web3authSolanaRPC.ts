@@ -1,6 +1,7 @@
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 import { CustomChainConfig, SafeEventEmitterProvider } from "@web3auth/base";
 import { SolanaWallet } from "@web3auth/solana-provider";
+import base58 from "bs58";
 
 export default class SolanaRpc {
   private provider: SafeEventEmitterProvider;
@@ -77,9 +78,12 @@ export default class SolanaRpc {
   };
 
   getPrivateKey = async (): Promise<string> => {
-    const privateKey = await this.provider.request({
+    const privateKeyHex = await this.provider.request({
       method: "solanaPrivateKey",
     });
+
+    const privateKeyBuffer = Buffer.from(privateKeyHex as string, "hex");
+    const privateKey = base58.encode(privateKeyBuffer);
 
     return privateKey as string;
   };
