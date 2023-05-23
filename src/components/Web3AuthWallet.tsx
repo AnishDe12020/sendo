@@ -6,7 +6,6 @@ import {
   LAMPORTS_PER_SOL,
   PublicKey,
 } from "@solana/web3.js";
-import { useAsyncMemo } from "use-async-memo";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 import axios from "axios";
@@ -157,6 +156,7 @@ const Web3AuthWallet = () => {
         netWorth,
       };
     },
+    enabled: !!address,
   });
 
   return (
