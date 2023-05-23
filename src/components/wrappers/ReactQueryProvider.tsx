@@ -2,7 +2,6 @@
 
 import React, { useMemo } from "react";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 function ReactQueryProvider({ children }: React.PropsWithChildren) {
   const client = useMemo(
@@ -10,12 +9,7 @@ function ReactQueryProvider({ children }: React.PropsWithChildren) {
     []
   );
 
-  return (
-    <QueryClientProvider client={client}>
-      {children}
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
-  );
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
 export default ReactQueryProvider;

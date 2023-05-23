@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { createQR } from "@/lib/qr";
-import { HTMLAttributes, forwardRef, useEffect, useRef, useState } from "react";
+import { HTMLAttributes, forwardRef, useEffect, useRef } from "react";
 import { truncatePubkey } from "@/utils/truncate";
 import { toast } from "sonner";
 import { CopyIcon } from "lucide-react";
@@ -47,7 +47,7 @@ const PublicKeyDialog = forwardRef<HTMLButtonElement, PublicKeyDialogProps>(
                 toast.success("Copied to clipboard");
               }}
               variant="secondary"
-              className="mt-4"
+              className="mt-6"
             >
               <CopyIcon className="w-4 h-4 mr-2" />
               <span>{truncatePubkey(address)}</span>

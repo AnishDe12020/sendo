@@ -18,6 +18,7 @@ import { CopyIcon } from "lucide-react";
 import { truncatePubkey } from "@/utils/truncate";
 import SendDialog from "./SendDialog";
 import { useQuery } from "@tanstack/react-query";
+import PrivateKeyDialog from "./Wallet/PrivateKeyDialog";
 
 const getSOL = async (address: string, connection: Connection) => {
   if (!address) {
@@ -200,6 +201,8 @@ const Web3AuthWallet = () => {
               <PublicKeyDialog className="w-full" address={address}>
                 Deposit
               </PublicKeyDialog>
+
+              <PrivateKeyDialog className="w-full" />
             </div>
           </div>
 
