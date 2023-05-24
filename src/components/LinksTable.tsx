@@ -140,7 +140,7 @@ const LinksTable = ({ links }: LinksTableProps) => {
   ];
 
   const table = useReactTable({
-    data: links,
+    data: links.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),

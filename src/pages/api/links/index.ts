@@ -1,7 +1,12 @@
 import { prisma } from "@/lib/db";
 import { Token } from "@prisma/client";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
-import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import {
+  Connection,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  TransactionResponse,
+} from "@solana/web3.js";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
@@ -52,7 +57,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         "confirmed"
       );
 
-      const tx = await connection.getTransaction(depositTxSig);
+      const tx = (await connection.getTransaction(depositTxSig, {
+        commitment: "confirmed",
+        maxSupportedTransactionVersion: 2,
+      })) as TransactionResponse;
 
       if (!tx) {
         return res.status(400).json({

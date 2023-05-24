@@ -146,7 +146,7 @@ const CreateLinkDialog = () => {
             blockhash: latestBlockhash.blockhash,
             lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
           },
-          "processed"
+          "confirmed"
         );
 
         const res = await axios.post("/api/links", {
