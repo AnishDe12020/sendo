@@ -1,6 +1,6 @@
 "use client";
 
-import { HTMLAttributes, forwardRef, useState } from "react";
+import { HTMLAttributes, forwardRef, useMemo, useState } from "react";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -13,7 +13,7 @@ import {
 } from "./ui/dialog";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, UseFormGetValues } from "react-hook-form";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import {
@@ -44,6 +44,7 @@ import {
 } from "@solana/web3.js";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { set } from "date-fns";
 
 interface SendFormSchema {
   amount: number;
@@ -59,7 +60,20 @@ const sendFormSchemaResolver = zodResolver(
         .positive({ message: "Amount should be positive" })
         .min(0.0000001, { message: "Amount should be greater than 0.0000001" }),
       token: z.string(),
-      recipient: z.string(),
+      recipient: z.string().refine(
+        (val) => {
+          try {
+            new PublicKey(val);
+            return true;
+          } catch (err) {
+            return false;
+          }
+        },
+        {
+          message:
+            "Invalid recipient address. Make sure it is a Solana public key",
+        }
+      ),
     })
     .required()
 );
@@ -82,6 +96,7 @@ const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
       setValue,
       control,
       reset,
+      watch,
     } = useForm<SendFormSchema>({
       resolver: sendFormSchemaResolver,
       defaultValues: {
@@ -108,6 +123,16 @@ const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
       try {
         let transferSig: string | undefined = undefined;
         if (isSPL) {
+          if (
+            data.amount >
+            tokensAvailable.find((t) => t.symbol === data.token)!
+              .amountAvailable
+          ) {
+            toast.error("Not enough balance");
+            setIsSending(false);
+            return;
+          }
+
           const splToken = SUPPORTED_SPL_TOKENS[data.token as SPL_TOKEN_ENUM];
           const userATA = getAssociatedTokenAddressSync(
             new PublicKey(splToken.address),
@@ -119,11 +144,22 @@ const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
             new PublicKey(data.recipient)
           );
 
-          const tokenAccount = await getAccount(connection, recipientATA);
-
           const tx: Transaction = new Transaction();
 
-          if (!tokenAccount.isInitialized) {
+          try {
+            const tokenAccount = await getAccount(connection, recipientATA);
+
+            if (!tokenAccount.isInitialized) {
+              const createATAIx = createAssociatedTokenAccountInstruction(
+                new PublicKey(address),
+                recipientATA,
+                new PublicKey(data.recipient),
+                new PublicKey(splToken.address)
+              );
+
+              tx.add(createATAIx);
+            }
+          } catch (err) {
             const createATAIx = createAssociatedTokenAccountInstruction(
               new PublicKey(address),
               recipientATA,
@@ -150,6 +186,17 @@ const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
           tx.recentBlockhash = latestBlockhash.blockhash;
           tx.feePayer = new PublicKey(address);
 
+          const solRequiredForGas = await tx.getEstimatedFee(connection);
+
+          if (
+            !solRequiredForGas ||
+            solRequiredForGas / LAMPORTS_PER_SOL > sol
+          ) {
+            toast.error("Not enough SOL for gas");
+            setIsSending(false);
+            return;
+          }
+
           transferSig = await sendTransaction(tx, connection);
 
           if (!transferSig) {
@@ -166,6 +213,12 @@ const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
             "processed"
           );
         } else {
+          if (data.amount > sol - 0.001) {
+            toast.error("Not enough balance");
+            setIsSending(false);
+            return;
+          }
+
           const transferTx = new Transaction().add(
             SystemProgram.transfer({
               fromPubkey: new PublicKey(address),
@@ -178,6 +231,19 @@ const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
 
           transferTx.recentBlockhash = latestBlockhash.blockhash;
           transferTx.feePayer = new PublicKey(address);
+
+          const solRequiredForGas = await transferTx.getEstimatedFee(
+            connection
+          );
+
+          if (
+            !solRequiredForGas ||
+            solRequiredForGas / LAMPORTS_PER_SOL > sol
+          ) {
+            toast.error("Not enough SOL for gas");
+            setIsSending(false);
+            return;
+          }
 
           transferSig = await sendTransaction(transferTx, connection);
 
@@ -242,25 +308,6 @@ const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
           <form onSubmit={onSubmit}>
             <div className="flex flex-col gap-6">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="amount" required>
-                  Amount
-                </Label>
-                <Input
-                  {...(register("amount"),
-                  {
-                    onChange: (e) =>
-                      setValue("amount", parseFloat(e.target.value)),
-                  })}
-                  step="any"
-                  type="number"
-                  placeholder="Amount"
-                />
-                {errors.amount && (
-                  <span className="text-red-500">{errors.amount.message}</span>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-2">
                 <Label htmlFor="type" required>
                   Token
                 </Label>
@@ -305,6 +352,33 @@ const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
               </div>
 
               <div className="flex flex-col gap-2">
+                <div className="flex justify-between">
+                  <Label htmlFor="amount" required>
+                    Amount
+                  </Label>
+
+                  <MaxValue
+                    token={watch("token")}
+                    sol={sol}
+                    tokensAvailable={tokensAvailable}
+                  />
+                </div>
+                <Input
+                  {...(register("amount"),
+                  {
+                    onChange: (e) =>
+                      setValue("amount", parseFloat(e.target.value)),
+                  })}
+                  step="any"
+                  type="number"
+                  placeholder="Amount"
+                />
+                {errors.amount && (
+                  <span className="text-red-500">{errors.amount.message}</span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
                 <Label htmlFor="message" required>
                   Address
                 </Label>
@@ -335,4 +409,27 @@ const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
 
 SendDialog.displayName = "SendDialog";
 
+const MaxValue = ({
+  token,
+  sol,
+  tokensAvailable,
+}: {
+  token: string;
+  sol: number;
+  tokensAvailable: {
+    symbol: string;
+    mint: string;
+    amountAvailable: number;
+  }[];
+}) => (
+  <p className="text-xs">
+    Max:{" "}
+    {token === "SOL"
+      ? (sol - 0.001).toFixed(5)
+      : tokensAvailable.find(
+          (tokenAvailable) => tokenAvailable.symbol === token
+        )?.amountAvailable}{" "}
+    {token}
+  </p>
+);
 export default SendDialog;
