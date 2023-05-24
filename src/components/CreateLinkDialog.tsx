@@ -44,6 +44,7 @@ import {
 import { useSession } from "next-auth/react";
 import { ConnectWallet } from "./shared/ConnectWallet";
 import { useRouter } from "next/navigation";
+import { sleep } from "@/lib/utils";
 
 interface CreateLinkFormSchema {
   amount: number;
@@ -149,6 +150,8 @@ const CreateLinkDialog = () => {
           "confirmed"
         );
 
+        await sleep(5000);
+
         const res = await axios.post("/api/links", {
           amount: data.amount,
           message: data.message,
@@ -213,6 +216,8 @@ const CreateLinkDialog = () => {
       startTransition(() => {
         router.refresh();
       });
+
+      setIsCreatingLink(false);
 
       setIsOpen(false);
     } catch (err) {

@@ -65,14 +65,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       if (!tx) {
         return res.status(400).json({
           success: false,
-          message: "Invalid transaction",
+          message: "Invalid transaction: tx not found",
         });
       }
 
       if (!tx.meta) {
         return res.status(400).json({
           success: false,
-          message: "Invalid transaction",
+          message: "Invalid transaction: tx meta not found",
         });
       }
 
@@ -87,7 +87,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           if (vaultAccountIndex < 0) {
             return res.status(400).json({
               success: false,
-              message: "Invalid transaction",
+              message: "Invalid transaction: vault account not found",
             });
           }
 
@@ -99,7 +99,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           if (!(vaultAccountBalanceChange >= amount * LAMPORTS_PER_SOL)) {
             return res.status(400).json({
               success: false,
-              message: "Invalid transaction",
+              message: "Invalid transaction: insufficient transfer amount",
             });
           }
 
@@ -158,7 +158,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           if (vaultAccountIndex < 0) {
             return res.status(400).json({
               success: false,
-              message: "Invalid transaction",
+              message: "Invalid transaction: vault account not found",
             });
           }
 
@@ -185,7 +185,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           ) {
             return res.status(400).json({
               success: false,
-              message: "Invalid transaction",
+              message: "Invalid transaction: insufficient transfer amount",
             });
           }
 

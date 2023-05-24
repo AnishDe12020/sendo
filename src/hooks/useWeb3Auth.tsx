@@ -3,32 +3,50 @@ import { WALLET_ADAPTERS } from "@web3auth/base";
 import { useAtom } from "jotai";
 import RPC from "@/lib/web3authSolanaRPC";
 import { useAsyncMemo } from "use-async-memo";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Connection, Transaction } from "@solana/web3.js";
 
 const useWeb3Auth = () => {
   const [web3auth, setWeb3Auth] = useAtom(web3AuthAtom);
   const [provider, setProvider] = useAtom(web3AuthProviderAtom);
+  const [address, setAddress] = useState<string | null>(null);
 
   const [isLoadingAddress, setLoading] = useState<boolean>(false);
 
-  const address = useAsyncMemo(
-    async () => {
-      setLoading(true);
+  // const address = useAsyncMemo(
+  //   async () => {
+  //     setLoading(true);
 
+  //     const accounts = await getAccounts();
+  //     if (!accounts || accounts.length === 0) {
+  //       setLoading(false);
+  //       return null;
+  //     }
+
+  //     setLoading(false);
+
+  //     return accounts[0];
+  //   },
+  //   [provider],
+  //   null
+  // );
+
+  useEffect(() => {
+    if (!web3auth) {
+      return;
+    }
+    const func = async () => {
       const accounts = await getAccounts();
+      setLoading(true);
       if (!accounts || accounts.length === 0) {
         setLoading(false);
-        return null;
+        return;
       }
-
+      setAddress(accounts[0]);
       setLoading(false);
-
-      return accounts[0];
-    },
-    [provider],
-    null
-  );
+    };
+    func();
+  }, [provider]);
 
   const login = async () => {
     if (!web3auth) {
@@ -42,7 +60,19 @@ const useWeb3Auth = () => {
         loginProvider: "google",
       }
     );
+
+    const acounts = await getAccounts();
+
+    if (!acounts || acounts.length === 0) {
+      console.error("No accounts found");
+      return;
+    }
+
+    setAddress(acounts[0]);
+
     setProvider(web3authProvider);
+
+    return acounts[0];
   };
 
   const authenticateUser = async () => {

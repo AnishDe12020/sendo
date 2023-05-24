@@ -14,6 +14,7 @@ import Lottie from "react-lottie-player";
 
 import claimingCircleAnimation from "../../public/claiming-circle.json";
 import { useRouter } from "next/navigation";
+import { sleep } from "@/lib/utils";
 
 interface ClaimLinkCardProps {
   link: Link;
@@ -61,11 +62,7 @@ const ClaimLinkCard = ({ link }: ClaimLinkCardProps) => {
     setStatus(Status.CLAIMING);
     if (!address) {
       await login();
-    }
-
-    if (!address) {
-      toast.error("Failed to login with Google");
-      setStatus(Status.IDLE);
+      router.refresh();
       return;
     }
 
@@ -110,7 +107,7 @@ const ClaimLinkCard = ({ link }: ClaimLinkCardProps) => {
             <span>
               {web3auth && address
                 ? "Claim to connected Google Account Wallet"
-                : "Login with Google and claim"}
+                : "Login with Google to claim"}
             </span>
           </Button>
           <p className="text-xs">
