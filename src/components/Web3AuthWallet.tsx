@@ -96,7 +96,7 @@ const Web3AuthWallet = () => {
           {(walletData.solData?.inSOL && walletData.solData.inSOL > 0
             ? true
             : false) ||
-          (walletData.solData?.inSOL && walletData.solData?.inSOL > 0) ? (
+          (walletData.tokens && walletData.tokens.length > 0) ? (
             <div className="flex flex-col items-center justify-center w-full gap-2 p-4 mt-4 bg-secondary rounded-xl">
               {(walletData.solData?.inSOL && walletData.solData.inSOL > 0
                 ? true
