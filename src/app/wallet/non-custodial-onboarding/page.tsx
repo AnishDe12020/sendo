@@ -490,6 +490,18 @@ const NonCustodialOnboardingPage = () => {
                 )}
               </>
             )}
+
+            {step === WalletSetupSteps.Done && (
+              <div className="flex flex-col gap-6">
+                <h2>Done</h2>
+
+                <p>
+                  You have successfully set up your non-custodial wallet and
+                  transferred your funds. You can now go ahead and start using
+                  your non-custodial wallet.
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           <Button onClick={login}>Login</Button>

@@ -38,7 +38,7 @@ const useWeb3Auth = () => {
     const web3authProvider = await web3auth.connectTo(
       WALLET_ADAPTERS.OPENLOGIN,
       {
-        mfaLevel: "optional",
+        mfaLevel: "none",
         loginProvider: "google",
       }
     );

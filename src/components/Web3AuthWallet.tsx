@@ -1,14 +1,6 @@
 import useWeb3Auth from "@/hooks/useWeb3Auth";
 import { useConnection } from "@solana/wallet-adapter-react";
-import {
-  Connection,
-  GetProgramAccountsFilter,
-  LAMPORTS_PER_SOL,
-  PublicKey,
-} from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
-import axios from "axios";
 import { Icons } from "./icons";
 import PublicKeyDialog from "./PublicKeyDialog";
 import { Button } from "./ui/button";
@@ -49,6 +41,8 @@ const Web3AuthWallet = () => {
     enabled: !!address,
   });
 
+  console.log(walletData);
+
   return (
     <div className="flex flex-col items-center w-full">
       {walletData && address ? (
@@ -73,21 +67,26 @@ const Web3AuthWallet = () => {
             </div>
 
             <div className="flex items-center justify-between w-full gap-2 mt-4">
-              <SendDialog
-                sol={walletData.solData?.inSOL ?? 0}
-                tokensAvailable={
-                  walletData.tokens
-                    ? walletData.tokens.map((t) => {
-                        return {
-                          symbol: t.symbol,
-                          mint: t.mintAddress,
-                          amountAvailable: t.balance,
-                        };
-                      })
-                    : []
-                }
-                className="w-full"
-              />
+              {(walletData.solData?.inSOL && walletData.solData.inSOL > 0
+                ? true
+                : false) && (
+                <SendDialog
+                  sol={walletData.solData?.inSOL ?? 0}
+                  tokensAvailable={
+                    walletData.tokens
+                      ? walletData.tokens.map((t) => {
+                          return {
+                            symbol: t.symbol,
+                            mint: t.mintAddress,
+                            amountAvailable: t.balance,
+                          };
+                        })
+                      : []
+                  }
+                  className="w-full"
+                />
+              )}
+
               <PublicKeyDialog className="w-full" address={address}>
                 Deposit
               </PublicKeyDialog>
@@ -96,62 +95,73 @@ const Web3AuthWallet = () => {
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center w-full gap-2 p-4 mt-4 bg-secondary rounded-xl">
-            {walletData?.solData && (
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-2">
-                  <img
-                    className="w-8 h-8 mr-2 rounded-xl"
-                    src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
-                    alt="solana"
-                  />
-                  <p className="text-lg font-bold">
-                    {walletData?.solData?.inSOL} SOL
-                  </p>
-                  <p>(${walletData?.solData?.inUSD.toFixed(2)} USD)</p>
-                </div>
-
-                <div className="flex items-center">
-                  <p className="text-lg font-bold">
-                    ${walletData?.solData?.price.toFixed(2)}
-                  </p>
-
-                  <p className="ml-2">(1 SOL)</p>
-                </div>
-              </div>
-            )}
-
-            {walletData?.tokens &&
-              walletData?.tokens.length > 0 &&
-              walletData?.tokens.map((token) => (
-                <div
-                  className="flex items-center justify-between w-full mt-4"
-                  key={token.symbol}
-                >
+          {(walletData.solData?.inSOL && walletData.solData.inSOL > 0.1
+            ? true
+            : false) ||
+          (walletData.solData?.inSOL && walletData.solData?.inSOL > 0) ? (
+            <div className="flex flex-col items-center justify-center w-full gap-2 p-4 mt-4 bg-secondary rounded-xl">
+              {(walletData.solData?.inSOL && walletData.solData.inSOL > 0.1
+                ? true
+                : false) && (
+                <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-2">
                     <img
                       className="w-8 h-8 mr-2 rounded-xl"
-                      src={token.logoURI}
-                      alt={token.name}
+                      src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
+                      alt="solana"
                     />
-
                     <p className="text-lg font-bold">
-                      {token.balance} {token.symbol}
+                      {walletData?.solData?.inSOL} SOL
                     </p>
-
-                    <p>(${token.valueInUSD.toFixed(2)} USD)</p>
+                    <p>(${walletData?.solData?.inUSD.toFixed(2)} USD)</p>
                   </div>
 
                   <div className="flex items-center">
                     <p className="text-lg font-bold">
-                      ${token.priceInUSD.toFixed(2)}
+                      ${walletData?.solData?.price.toFixed(2)}
                     </p>
 
-                    <p className="ml-2">(1 {token.symbol})</p>
+                    <p className="ml-2">(1 SOL)</p>
                   </div>
                 </div>
-              ))}
-          </div>
+              )}
+
+              {walletData?.tokens &&
+                walletData?.tokens.length > 0 &&
+                walletData?.tokens.map((token) => (
+                  <div
+                    className="flex items-center justify-between w-full mt-4"
+                    key={token.symbol}
+                  >
+                    <div className="flex items-center gap-2">
+                      <img
+                        className="w-8 h-8 mr-2 rounded-xl"
+                        src={token.logoURI}
+                        alt={token.name}
+                      />
+
+                      <p className="text-lg font-bold">
+                        {token.balance} {token.symbol}
+                      </p>
+
+                      <p>(${token.valueInUSD.toFixed(2)} USD)</p>
+                    </div>
+
+                    <div className="flex items-center">
+                      <p className="text-lg font-bold">
+                        ${token.priceInUSD.toFixed(2)}
+                      </p>
+
+                      <p className="ml-2">(1 {token.symbol})</p>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <p className="w-full p-4 mt-4 bg-secondary rounded-xl">
+              No tokens yet.
+            </p>
+          )}
 
           <div className="flex flex-col items-center justify-center w-full gap-2 p-4 mt-4 bg-secondary rounded-xl">
             <Button

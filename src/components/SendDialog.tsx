@@ -44,7 +44,6 @@ import {
 } from "@solana/web3.js";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { set } from "date-fns";
 
 interface SendFormSchema {
   amount: number;
@@ -100,7 +99,7 @@ const SendDialog = forwardRef<HTMLButtonElement, SendDialogProps>(
     } = useForm<SendFormSchema>({
       resolver: sendFormSchemaResolver,
       defaultValues: {
-        token: sol > 0 ? "SOL" : tokensAvailable[0].symbol,
+        token: sol > 0 ? "SOL" : tokensAvailable[0]?.symbol || "",
       },
     });
 
