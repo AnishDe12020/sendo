@@ -67,8 +67,6 @@ const QRCode = ({ address }: { address: string }) => {
   useEffect(() => {
     const qr = createQR(address, 256, "#000000", "#ffffffc3");
 
-    console.log("qr", qrRef.current);
-
     if (qrRef.current) {
       qrRef.current.innerHTML = "";
       qr.append(qrRef.current);

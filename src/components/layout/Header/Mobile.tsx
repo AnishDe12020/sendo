@@ -37,6 +37,24 @@ export const MobileNav = () => {
           <Icons.logo className="w-4 h-4 mr-2" />
           <span className="font-bold">{siteConfig.name}</span>
         </MobileLink>
+
+        <nav className="flex flex-col items-start mt-8 space-y-4">
+          <MobileLink
+            href="/dashboard"
+            className="transition-colors hover:text-foreground/80"
+            onOpenChange={setOpen}
+          >
+            Dashboard
+          </MobileLink>
+
+          <MobileLink
+            href="/wallet"
+            className="transition-colors hover:text-foreground/80"
+            onOpenChange={setOpen}
+          >
+            Wallet
+          </MobileLink>
+        </nav>
       </SheetContent>
     </Sheet>
   );

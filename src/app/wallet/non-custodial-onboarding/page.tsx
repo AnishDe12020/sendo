@@ -87,8 +87,6 @@ const NonCustodialOnboardingPage = () => {
 
       const tokens = await getTokens(address, connection);
 
-      console.log(tokens);
-
       const netWorth = await getNetWorth(solData?.inUSD, tokens);
 
       return {
@@ -199,13 +197,6 @@ const NonCustodialOnboardingPage = () => {
       toast.error("Not enough SOL to cover gas fees");
       return;
     }
-
-    console.log(
-      (solData.inSOL * LAMPORTS_PER_SOL -
-        gasRequiredTillNow * LAMPORTS_PER_SOL -
-        0.001 * LAMPORTS_PER_SOL) /
-        LAMPORTS_PER_SOL
-    );
 
     const solTransferIx = SystemProgram.transfer({
       fromPubkey: publicKey,

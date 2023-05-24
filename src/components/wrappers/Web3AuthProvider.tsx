@@ -2,9 +2,7 @@
 
 import { ReactNode, useEffect } from "react";
 import { Web3AuthCore } from "@web3auth/core";
-import {
-  CHAIN_NAMESPACES,
-} from "@web3auth/base";
+import { CHAIN_NAMESPACES } from "@web3auth/base";
 import { toast } from "sonner";
 import useWeb3Auth from "@/hooks/useWeb3Auth";
 import { OpenloginAdapter } from "@web3auth/openlogin-adapter";
@@ -46,7 +44,7 @@ const Web3AuthProvider = ({ children }: Web3AuthProviderProps) => {
         setWeb3Auth(web3auth);
         setProvider(web3auth.provider);
       } catch (error) {
-        console.log(error);
+        console.error(error);
         toast.error("Error initializing Web3Auth");
       }
     };

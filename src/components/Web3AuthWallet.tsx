@@ -41,8 +41,6 @@ const Web3AuthWallet = () => {
     enabled: !!address,
   });
 
-  console.log(walletData);
-
   return (
     <div className="flex flex-col items-center w-full">
       {walletData && address ? (
