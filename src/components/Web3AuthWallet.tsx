@@ -95,12 +95,12 @@ const Web3AuthWallet = () => {
             </div>
           </div>
 
-          {(walletData.solData?.inSOL && walletData.solData.inSOL > 0.1
+          {(walletData.solData?.inSOL && walletData.solData.inSOL > 0
             ? true
             : false) ||
           (walletData.solData?.inSOL && walletData.solData?.inSOL > 0) ? (
             <div className="flex flex-col items-center justify-center w-full gap-2 p-4 mt-4 bg-secondary rounded-xl">
-              {(walletData.solData?.inSOL && walletData.solData.inSOL > 0.1
+              {(walletData.solData?.inSOL && walletData.solData.inSOL > 0
                 ? true
                 : false) && (
                 <div className="flex items-center justify-between w-full">
