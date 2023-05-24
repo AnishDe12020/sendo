@@ -27,7 +27,7 @@ enum Status {
 }
 
 const ClaimLinkCard = ({ link }: ClaimLinkCardProps) => {
-  const { login, address } = useWeb3Auth();
+  const { login, address, web3auth } = useWeb3Auth();
   const { publicKey } = useWallet();
 
   const [status, setStatus] = useState<Status>(Status.IDLE);
@@ -104,10 +104,11 @@ const ClaimLinkCard = ({ link }: ClaimLinkCardProps) => {
           <Button
             onClick={handleWeb3AuthClaim}
             className="text-black bg-white hover:bg-gray-200"
+            isLoading={!web3auth}
           >
             <Icons.google className="w-10 h-10 mr-1" />
             <span>
-              {address
+              {web3auth && address
                 ? "Claim to connected Google Account Wallet"
                 : "Login with Google and claim"}
             </span>
