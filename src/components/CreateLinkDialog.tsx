@@ -45,6 +45,7 @@ import { useSession } from "next-auth/react";
 import { ConnectWallet } from "./shared/ConnectWallet";
 import { useRouter } from "next/navigation";
 import { sleep } from "@/lib/utils";
+import * as Sentry from "@sentry/nextjs";
 
 interface CreateLinkFormSchema {
   amount: number;
@@ -197,6 +198,7 @@ const CreateLinkDialog = () => {
         });
 
         if (res.status != 200) {
+          Sentry.captureException(res.data);
           throw new Error("Error creating link");
         }
       }

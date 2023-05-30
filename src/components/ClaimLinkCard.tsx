@@ -14,7 +14,7 @@ import Lottie from "react-lottie-player";
 
 import claimingCircleAnimation from "../../public/claiming-circle.json";
 import { useRouter } from "next/navigation";
-import { sleep } from "@/lib/utils";
+import * as Sentry from "@sentry/nextjs";
 
 interface ClaimLinkCardProps {
   link: Link;
@@ -43,6 +43,7 @@ const ClaimLinkCard = ({ link }: ClaimLinkCardProps) => {
       });
 
       if (!data.success) {
+        Sentry.captureException(data);
         throw new Error("Failed to claim link");
       }
 
