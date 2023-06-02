@@ -136,7 +136,7 @@ export const ConnectWallet = forwardRef<HTMLButtonElement, ConnectWalletProps>(
             <DialogTitle>Connect Wallet</DialogTitle>
           </DialogHeader>
 
-          {publicKey && !onlyConnect ? (
+          {publicKey && !onlyConnect && status === "unauthenticated" ? (
             <div className="flex flex-col items-center justify-center gap-6 mt-4 text-center">
               <Button onClick={() => login()} isLoading={isSigningIn}>
                 Sign Message
