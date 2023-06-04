@@ -58,13 +58,9 @@ const CreateTokenLink = ({ setIsOpen }: CreateLinkDialogProps) => {
   });
 
   const [isCreatingLink, setIsCreatingLink] = useState(false);
-
   const { publicKey, sendTransaction } = useWallet();
-
   const { connection } = useConnection();
-
   const router = useRouter();
-
   const [_isPending, startTransition] = useTransition();
 
   const onSubmit = handleSubmit(async (data) => {
