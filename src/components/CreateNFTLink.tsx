@@ -45,6 +45,8 @@ import {
   toBigNumber,
   walletAdapterIdentity,
 } from "@metaplex-foundation/js";
+import axios from "axios";
+import Sentry from "@sentry/nextjs";
 
 const MAX_FILE_SIZE = 5_24_49_280;
 
@@ -86,77 +88,69 @@ const CreateNFTLink = ({ setIsOpen }: CreateLinkDialogProps) => {
       return;
     }
 
-    const storage = new ThirdwebStorage();
+    try {
+      const storage = new ThirdwebStorage();
 
-    const randomNumnber = Math.floor(Math.random() * 1000000000);
+      const randomNumnber = Math.floor(Math.random() * 1000000000);
 
-    const imageUrl = await storage.upload(data.image);
+      const imageUrl = await storage.upload(data.image);
 
-    const metadata = {
-      name: data.collectionName,
-      symbol: data.symbol,
-      description: data.collectionDescription,
-      image: imageUrl,
-      external_url: data.externalLink,
-    };
+      const metadata = {
+        name: data.collectionName,
+        symbol: data.symbol,
+        description: data.collectionDescription,
+        image: imageUrl,
+        external_url: data.externalLink,
+      };
 
-    const metadataUrl = await storage.upload(
-      new File(
-        [JSON.stringify(metadata)],
-        `${data.collectionName}-metadata-${randomNumnber}.json`
-      )
-    );
+      const metadataUrl = await storage.upload(
+        new File(
+          [JSON.stringify(metadata)],
+          `${data.collectionName}-metadata-${randomNumnber}.json`
+        )
+      );
 
-    const metaplex = new Metaplex(
-      new Connection(
-        data.network === "devnet"
-          ? clusterApiUrl("devnet")
-          : (process.env.NEXT_PUBLIC_MAINNET_RPC as string)
-      )
-    ).use(walletAdapterIdentity(wallet));
+      const metaplex = new Metaplex(
+        new Connection(
+          data.network === "devnet"
+            ? clusterApiUrl("devnet")
+            : (process.env.NEXT_PUBLIC_MAINNET_RPC as string)
+        )
+      ).use(walletAdapterIdentity(wallet));
 
-    const collectionAuthority = Keypair.generate();
+      const { nft: collectionNft } = await metaplex.nfts().create({
+        name: data.collectionName,
+        uri: metadataUrl,
+        sellerFeeBasisPoints: data.royalty ?? 0 * 100,
+        isCollection: true,
+      });
 
-    const { nft: collectionNft } = await metaplex.nfts().create({
-      name: data.collectionName,
-      uri: metadataUrl,
-      sellerFeeBasisPoints: data.royalty ?? 0 * 100,
-      isCollection: true,
-      updateAuthority: collectionAuthority,
-    });
+      const { candyMachine } = await metaplex.candyMachines().create({
+        itemsAvailable: toBigNumber(data.collectionSize),
+        sellerFeeBasisPoints: data.royalty ?? 0 * 100,
+        collection: {
+          address: collectionNft.address,
+          updateAuthority: metaplex.identity(),
+        },
+      });
 
-    const { candyMachine } = await metaplex.candyMachines().create({
-      itemsAvailable: toBigNumber(data.collectionSize),
-      sellerFeeBasisPoints: data.royalty ?? 0 * 100,
-      collection: {
-        address: collectionNft.address,
-        updateAuthority: metaplex.identity(),
-      },
-    });
+      console.log(candyMachine);
 
-    console.log(candyMachine);
+      const res = await axios.post("/api/candy-machine-links", {
+        address: wallet.publicKey.toBase58(),
+        candymachineAddress: candyMachine.address,
+      });
 
-    // const umi = createUmi(
-    //   data.network === "devnet"
-    //     ? clusterApiUrl("devnet")
-    //     : (process.env.NEXT_PUBLIC_MAINNET_RPC as string)
-    // )
-    //   .use(mplCandyMachine())
-    //   .use(walletAdapterIdentity(wallet));
+      if (res.status != 200) {
+        Sentry.captureException(res.data);
+        throw new Error("Error creating link");
+      }
 
-    // const collectionMint = generateSigner(umi);
-    // const collectionUpdateAuthority = generateSigner(umi);
-
-    // const nft = await createNft(umi, {
-    //   mint: collectionMint,
-    //   authority: collectionUpdateAuthority,
-    //   name: data.collectionName,
-    //   uri: metadataUrl,
-    //   sellerFeeBasisPoints: percentAmount(data.royalty ?? 0, 2),
-    //   isCollection: true,
-    // }).sendAndConfirm(umi);
-
-    // const candyMachine = generateSigner(umi);
+      toast.success("Link created successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error creating link");
+    }
 
     startTransition(() => {
       router.refresh();
@@ -283,7 +277,7 @@ const CreateNFTLink = ({ setIsOpen }: CreateLinkDialogProps) => {
             <FormItem>
               <FormLabel>Network</FormLabel>
               <FormControl>
-                <Select {...field}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select network" />
                   </SelectTrigger>
@@ -350,7 +344,10 @@ const CreateNFTLink = ({ setIsOpen }: CreateLinkDialogProps) => {
             </FormItem>
           )}
         />
-        <DialogFooter className="mt-6">
+        <DialogFooter className="items-center gap-2 mt-6">
+          <p className="text-sm text-gray-400">
+            You will need to confirm 2 transactions
+          </p>
           <Button type="submit" isLoading={isCreatingLink}>
             Create link
           </Button>

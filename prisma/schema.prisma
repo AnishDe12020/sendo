@@ -20,9 +20,10 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  address String  @unique
-  email   String?
-  links   Link[]
+  address          String             @unique
+  email            String?
+  links            Link[]
+  CandyMachineLink CandyMachineLink[]
 }
 
 model Link {
@@ -46,4 +47,24 @@ model Link {
 
   @@index([createdById], name: "createdById")
   @@index([depositTx], name: "depositTx")
+}
+
+type NFTClaim {
+  claimer   String
+  claimedAt DateTime
+}
+
+model CandyMachineLink {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now()) @map("created_at")
+
+  candymachineAddress String
+  message             String?
+  claimers            NFTClaim[]
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String @db.ObjectId
+
+  @@index([createdById], name: "createdById")
+  @@index([candymachineAddress], name: "candymachineAddress")
 }
