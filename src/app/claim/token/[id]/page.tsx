@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import useWeb3Auth from "@/hooks/useWeb3Auth";
 import { prisma } from "@/lib/db";
 import { SUPPORTED_SPL_TOKENS, TOKEN_SOL } from "@/lib/tokens";
+import { claimToken } from "@/utils/claimLink";
 import { WalletIcon } from "lucide-react";
+import { notFound } from "next/navigation";
 
 interface ClaimPageProps {
   params: {
@@ -19,7 +21,11 @@ const ClaimPage = async ({ params }: ClaimPageProps) => {
     },
   });
 
-  return link && !link.claimed ? (
+  if (!link) {
+    notFound();
+  }
+
+  return !link.claimed ? (
     <>
       <img
         src={
@@ -43,7 +49,7 @@ const ClaimPage = async ({ params }: ClaimPageProps) => {
         </p>
       )}
 
-      <ClaimLinkCard link={link} />
+      <ClaimLinkCard id={link.id} claimType="token" />
     </>
   ) : (
     <h1 className="text-5xl font-bold">Link already claimed</h1>

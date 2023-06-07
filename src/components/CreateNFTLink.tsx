@@ -47,6 +47,8 @@ import {
 } from "@metaplex-foundation/js";
 import axios from "axios";
 import Sentry from "@sentry/nextjs";
+import ipfsToUrl from "@/utils/ipfsToUrl";
+import { nftStorage } from "@metaplex-foundation/js-plugin-nft-storage";
 
 const MAX_FILE_SIZE = 5_24_49_280;
 
@@ -91,9 +93,26 @@ const CreateNFTLink = ({ setIsOpen }: CreateLinkDialogProps) => {
     try {
       const storage = new ThirdwebStorage();
 
+      const metaplex = new Metaplex(
+        new Connection(
+          data.network === "devnet"
+            ? clusterApiUrl("devnet")
+            : (process.env.NEXT_PUBLIC_MAINNET_RPC as string)
+        )
+      ).use(walletAdapterIdentity(wallet));
+
       const randomNumnber = Math.floor(Math.random() * 1000000000);
 
-      const imageUrl = await storage.upload(data.image);
+      const fileToUpload = new File(
+        [data.image],
+        `${data.collectionName}-image-${randomNumnber}.png`
+      );
+
+      const imageIPFSUrl = await storage.upload(fileToUpload);
+
+      const imageUrl = ipfsToUrl(imageIPFSUrl);
+
+      console.log(imageUrl);
 
       const metadata = {
         name: data.collectionName,
@@ -103,20 +122,40 @@ const CreateNFTLink = ({ setIsOpen }: CreateLinkDialogProps) => {
         external_url: data.externalLink,
       };
 
-      const metadataUrl = await storage.upload(
+      const metadataIPFSUrl = await storage.upload(
         new File(
           [JSON.stringify(metadata)],
           `${data.collectionName}-metadata-${randomNumnber}.json`
         )
       );
 
-      const metaplex = new Metaplex(
-        new Connection(
-          data.network === "devnet"
-            ? clusterApiUrl("devnet")
-            : (process.env.NEXT_PUBLIC_MAINNET_RPC as string)
-        )
-      ).use(walletAdapterIdentity(wallet));
+      const metadataUrl = ipfsToUrl(metadataIPFSUrl);
+
+      const nftFiles = [];
+
+      for (let i = 0; i < data.collectionSize; i++) {
+        const metadata = {
+          name: `${data.collectionName} #${i + 1}`,
+          description: data.collectionDescription,
+          image: imageUrl,
+        };
+
+        nftFiles.push(
+          new File(
+            [JSON.stringify(metadata)],
+            `${data.collectionName}-metadata-${i + 1}-${randomNumnber}.json`
+          )
+        );
+      }
+
+      const meatadatIPFSUrls = await storage.uploadBatch(nftFiles);
+
+      const nfts = meatadatIPFSUrls.map((url, index) => ({
+        metadataUrl: ipfsToUrl(url),
+        name: `${data.collectionName} #${index + 1}`,
+      }));
+
+      console.log(nfts);
 
       const { nft: collectionNft } = await metaplex.nfts().create({
         name: data.collectionName,
@@ -136,9 +175,23 @@ const CreateNFTLink = ({ setIsOpen }: CreateLinkDialogProps) => {
 
       console.log(candyMachine);
 
+      await metaplex.candyMachines().insertItems({
+        candyMachine,
+        items: nfts.map((nft) => ({ name: nft.name, uri: nft.metadataUrl })),
+      });
+
       const res = await axios.post("/api/candy-machine-links", {
+        name: data.collectionName,
         address: wallet.publicKey.toBase58(),
         candymachineAddress: candyMachine.address,
+        size: data.collectionSize,
+        network: data.network,
+        imageUrl,
+        metadataUrl,
+        description: data.collectionDescription,
+        royalty: data.royalty,
+        symbol: data.symbol,
+        externalUrl: data.externalLink,
       });
 
       if (res.status != 200) {
@@ -244,7 +297,7 @@ const CreateNFTLink = ({ setIsOpen }: CreateLinkDialogProps) => {
                 <Input
                   {...field}
                   type="number"
-                  onChange={(e) => field.onChange(parseInt(e.target.value))}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
                 />
               </FormControl>
               <FormDescription>The royalty of your collection.</FormDescription>
@@ -344,9 +397,13 @@ const CreateNFTLink = ({ setIsOpen }: CreateLinkDialogProps) => {
             </FormItem>
           )}
         />
-        <DialogFooter className="items-center gap-2 mt-6">
+        <DialogFooter className="items-center gap-4 mt-6 text-center sm:flex-col-reverse">
           <p className="text-sm text-gray-400">
             You will need to confirm 2 transactions
+          </p>
+          <p className="text-sm text-gray-400">
+            Uploading the image takes some time (up to 1 minute) before you
+            confirm the transaction
           </p>
           <Button type="submit" isLoading={isCreatingLink}>
             Create link

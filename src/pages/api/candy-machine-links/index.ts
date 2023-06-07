@@ -28,7 +28,20 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         });
       }
 
-      const { address, candymachineAddress, message } = body;
+      const {
+        address,
+        candymachineAddress,
+        message,
+        size,
+        name,
+        description,
+        royalty,
+        symbol,
+        externalUrl,
+        network,
+        imageUrl,
+        metadataUrl,
+      } = body;
 
       if (!user.name === address) {
         return res.status(401).json({
@@ -37,7 +50,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         });
       }
 
-      if (!candymachineAddress) {
+      if (
+        !candymachineAddress ||
+        !size ||
+        !network ||
+        !imageUrl ||
+        !metadataUrl ||
+        !name
+      ) {
         return res.status(400).json({
           success: false,
           message: "Missing fields",
@@ -60,8 +80,18 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
         const link = await prisma.candyMachineLink.create({
           data: {
+            name,
             candymachineAddress,
             message,
+            size,
+            alreadyMinted: 0,
+            description,
+            royalty,
+            symbol,
+            externalUrl,
+            network,
+            imageUrl,
+            metadataUrl,
             createdBy: {
               connect: {
                 address,

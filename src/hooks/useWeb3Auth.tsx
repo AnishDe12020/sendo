@@ -5,6 +5,7 @@ import RPC from "@/lib/web3authSolanaRPC";
 import { useAsyncMemo } from "use-async-memo";
 import { useEffect, useState } from "react";
 import { Connection, Transaction } from "@solana/web3.js";
+import { sleep } from "@/lib/utils";
 
 const useWeb3Auth = () => {
   const [web3auth, setWeb3Auth] = useAtom(web3AuthAtom);
@@ -61,6 +62,8 @@ const useWeb3Auth = () => {
       }
     );
 
+    setProvider(web3authProvider);
+
     const acounts = await getAccounts();
 
     if (!acounts || acounts.length === 0) {
@@ -69,8 +72,6 @@ const useWeb3Auth = () => {
     }
 
     setAddress(acounts[0]);
-
-    setProvider(web3authProvider);
 
     return acounts[0];
   };

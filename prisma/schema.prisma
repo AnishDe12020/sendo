@@ -50,15 +50,26 @@ model Link {
 }
 
 type NFTClaim {
-  claimer   String
-  claimedAt DateTime
+  claimerAddress String
+  claimSignature String
+  claimedAt      DateTime
 }
 
 model CandyMachineLink {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   createdAt DateTime @default(now()) @map("created_at")
 
+  name                String
   candymachineAddress String
+  imageUrl            String
+  metadataUrl         String
+  alreadyMinted       Int
+  size                Int
+  description         String?
+  royalty             Float?
+  symbol              String?
+  externalUrl         String?
+  network             String?
   message             String?
   claimers            NFTClaim[]
 

@@ -15,9 +15,12 @@ import Lottie from "react-lottie-player";
 import claimingCircleAnimation from "../../public/claiming-circle.json";
 import { useRouter } from "next/navigation";
 import * as Sentry from "@sentry/nextjs";
+import { claimCandymachineNFT, claimToken } from "@/utils/claimLink";
+import { sleep } from "@/lib/utils";
 
 interface ClaimLinkCardProps {
-  link: Link;
+  id: string;
+  claimType: ClaimType;
 }
 
 enum Status {
@@ -27,7 +30,19 @@ enum Status {
   CLAIMED_WALLET,
 }
 
-const ClaimLinkCard = ({ link }: ClaimLinkCardProps) => {
+export type ClaimType = "token" | "candy-machine";
+
+const getClaimFunction = (claimType: ClaimType) => {
+  switch (claimType) {
+    case "token":
+      return claimToken;
+
+    case "candy-machine":
+      return claimCandymachineNFT;
+  }
+};
+
+const ClaimLinkCard = ({ id, claimType }: ClaimLinkCardProps) => {
   const { login, address, web3auth } = useWeb3Auth();
   const { publicKey } = useWallet();
 
@@ -36,44 +51,30 @@ const ClaimLinkCard = ({ link }: ClaimLinkCardProps) => {
 
   const router = useRouter();
 
-  const claim = async (claimerAddress: string) => {
-    try {
-      const { data } = await axios.post(`/api/links/${link.id}`, {
-        claimerAddress,
-      });
-
-      if (!data.success) {
-        Sentry.captureException(data);
-        throw new Error("Failed to claim link");
-      }
-
-      const { transferSig } = data;
-
-      setClaimSignature(transferSig);
-
-      return true;
-    } catch (err) {
-      toast.error("Failed to claim link");
-
-      return false;
-    }
-  };
-
   const handleWeb3AuthClaim = async () => {
     setStatus(Status.CLAIMING);
     if (!address) {
       await login();
-      router.refresh();
+      setStatus(Status.IDLE);
       return;
     }
 
-    const success = await claim(address);
+    const claimFunction = getClaimFunction(claimType);
+
+    if (!claimFunction) {
+      toast.error("Invalid claim type");
+      setStatus(Status.IDLE);
+      return;
+    }
+
+    const { success, signature } = await claimFunction(id, address);
 
     if (!success) {
       setStatus(Status.IDLE);
       return;
     }
 
+    setClaimSignature(signature as string);
     setStatus(Status.CLAIMED_WEB3AUTH);
   };
 
@@ -85,13 +86,25 @@ const ClaimLinkCard = ({ link }: ClaimLinkCardProps) => {
       return;
     }
 
-    const success = await claim(publicKey.toBase58());
+    const claimFunction = getClaimFunction(claimType);
+
+    if (!claimFunction) {
+      toast.error("Invalid claim type");
+      setStatus(Status.IDLE);
+      return;
+    }
+
+    const { success, signature } = await claimFunction(
+      id,
+      publicKey.toBase58()
+    );
 
     if (!success) {
       setStatus(Status.IDLE);
       return;
     }
 
+    setClaimSignature(signature as string);
     setStatus(Status.CLAIMED_WALLET);
   };
 

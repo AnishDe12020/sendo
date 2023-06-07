@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "@prisma/client";
+import { CandyMachineLink } from "@prisma/client";
 import {
   createColumnHelper,
   flexRender,
@@ -8,6 +8,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useSession } from "next-auth/react";
 import {
   Table,
   TableBody,
@@ -16,90 +17,102 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
-import { SUPPORTED_SPL_TOKENS, TOKEN_SOL } from "@/lib/tokens";
-import { Badge } from "./ui/badge";
 import { format } from "date-fns";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { ClipboardIcon, ExternalLinkIcon } from "lucide-react";
 import { toast } from "sonner";
 import DeleteLinkDialog from "./DeleteLinkDialog";
-import { useSession } from "next-auth/react";
 
-interface LinksTableProps {
-  links: Link[];
+interface CandyMachineLinksTableProps {
+  candyMachineLinks: CandyMachineLink[];
 }
 
-const LinksTable = ({ links }: LinksTableProps) => {
-  const columnHelper = createColumnHelper<Link>();
+const CandyMachineLinksTable = ({
+  candyMachineLinks,
+}: CandyMachineLinksTableProps) => {
+  const columnHelper = createColumnHelper<CandyMachineLink>();
 
   const { data: user } = useSession();
 
   const columns = [
-    columnHelper.accessor("amount", {
-      id: "amount",
-      header: "Amount",
+    columnHelper.accessor("name", {
+      id: "name",
+      header: "Name",
+      cell: (info) => (
+        <p className="w-24 break-words text-md">{info.getValue()}</p>
+      ),
+    }),
+    columnHelper.accessor("description", {
+      id: "description",
+      header: "Description",
+      cell: (info) => (
+        <p className="w-24 break-words text-md">{info.getValue() || "-"}</p>
+      ),
+    }),
+
+    columnHelper.accessor("alreadyMinted", {
+      id: "availableMintedTotal",
+      header: "Available / Minted / Total",
       cell: (info) => {
-        const value = info.getValue();
-        const isSOL = info.row.original.token === "SOL";
-        const symbol = isSOL ? "SOL" : (info.row.original.symbol as string);
+        const alreadyMinted = info.getValue();
+        const available = info.row.original.size - alreadyMinted;
+        const total = info.row.original.size;
 
         return (
-          <div className="flex items-center justify-center gap-2 -ml-2">
-            <img
-              src={
-                isSOL
-                  ? TOKEN_SOL.logoURI
-                  : SUPPORTED_SPL_TOKENS[
-                      symbol as keyof typeof SUPPORTED_SPL_TOKENS
-                    ].logoURI
-              }
-              alt={symbol}
-              className="w-8 h-8 rounded-lg"
-            />
-            <div className="flex items-center justify-center gap-1">
-              <span>{value}</span>
-              <span>{symbol}</span>
-            </div>
-          </div>
+          <p className="break-words text-md">
+            {available} / {alreadyMinted} / {total}
+          </p>
         );
       },
     }),
-    columnHelper.accessor("claimed", {
-      id: "claimed",
-      header: "Claimed",
-      cell: (info) =>
-        info.getValue() ? (
-          <Badge>Claimed</Badge>
-        ) : (
-          <Badge variant="outline">Not claimed</Badge>
-        ),
+    columnHelper.accessor("message", {
+      id: "message",
+      header: "Message",
+      cell: (info) => (
+        <p className="w-24 break-words text-md">{info.getValue() || "-"}</p>
+      ),
     }),
-    columnHelper.accessor("claimedAt", {
-      id: "claimedAt",
-      header: "Claimed At",
+    columnHelper.accessor("externalUrl", {
+      id: "externalUrl",
+      header: "External URL",
       cell: (info) => {
         const value = info.getValue();
-        return value ? <span>{format(value, "PPpp")}</span> : <span>-</span>;
+
+        return value ? (
+          <a
+            href={value}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-24 break-words text-md"
+          >
+            {value}
+          </a>
+        ) : (
+          <p className="w-24 break-words text-md">-</p>
+        );
       },
+    }),
+    columnHelper.accessor("network", {
+      id: "network",
+      header: "Network",
+      cell: (info) =>
+        info.getValue() === "mainnet-beta" ? (
+          <Badge>Mainnet</Badge>
+        ) : (
+          <Badge className="bg-green-700">Devnet</Badge>
+        ),
     }),
     columnHelper.accessor("createdAt", {
       id: "createdAt",
       header: "Created At",
       cell: (info) => <span>{format(info.getValue(), "PPpp")}</span>,
     }),
-    columnHelper.accessor("message", {
-      id: "message",
-      header: "Message",
-      cell: (info) => (
-        <p className="w-32 text-sm break-words">{info.getValue()}</p>
-      ),
-    }),
     columnHelper.accessor("id", {
       id: "actions",
       header: "",
       cell: (info) => {
         const id = info.getValue();
-        const claimed = info.row.original.claimed;
 
         return (
           <TableCell key="actions">
@@ -109,7 +122,7 @@ const LinksTable = ({ links }: LinksTableProps) => {
                 size="sm"
                 onClick={() => {
                   window.open(
-                    window.location.origin + "/claim/" + id,
+                    window.location.origin + "/claim/candymachine/" + id,
                     "_blank"
                   );
                 }}
@@ -122,7 +135,7 @@ const LinksTable = ({ links }: LinksTableProps) => {
                 size="sm"
                 onClick={() => {
                   navigator.clipboard.writeText(
-                    window.location.origin + "/claim/" + id
+                    window.location.origin + "/claim/candymachine/" + id
                   );
                   toast.success("Copied to clipboard");
                 }}
@@ -130,8 +143,6 @@ const LinksTable = ({ links }: LinksTableProps) => {
                 <ClipboardIcon className="w-4 h-4 mr-2" />
                 Copy
               </Button>
-
-              <DeleteLinkDialog id={id} claimed={claimed} />
             </div>
           </TableCell>
         );
@@ -140,7 +151,9 @@ const LinksTable = ({ links }: LinksTableProps) => {
   ];
 
   const table = useReactTable({
-    data: links.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+    data: candyMachineLinks.sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+    ),
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -148,9 +161,11 @@ const LinksTable = ({ links }: LinksTableProps) => {
 
   const { rows } = table.getRowModel();
 
+  console.log(rows);
+
   return (
     user &&
-    (links.length > 0 ? (
+    (candyMachineLinks.length > 0 ? (
       <div className="w-full p-4 mt-8 overflow-x-auto border rounded-sm">
         <Table>
           <TableHeader>
@@ -194,4 +209,4 @@ const LinksTable = ({ links }: LinksTableProps) => {
   );
 };
 
-export default LinksTable;
+export default CandyMachineLinksTable;
