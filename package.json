@@ -39,6 +39,7 @@
     "@web3auth/openlogin-adapter": "^4.5.0",
     "@web3auth/solana-provider": "^4.5.0",
     "autoprefixer": "10.4.14",
+    "avvvatars-react": "^0.4.2",
     "axios": "^1.4.0",
     "bip32": "^4.0.0",
     "bip39": "^3.1.0",

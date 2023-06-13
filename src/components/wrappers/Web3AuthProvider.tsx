@@ -30,7 +30,7 @@ const Web3AuthProvider = ({ children }: Web3AuthProviderProps) => {
         const openloginAdapter = new OpenloginAdapter({
           adapterSettings: {
             whiteLabel: {
-              name: "Onsol",
+              name: "Sendo",
               logoLight: "https://web3auth.io/images/w3a-L-Favicon-1.svg",
               logoDark: "https://web3auth.io/images/w3a-D-Favicon-1.svg",
               defaultLanguage: "en",

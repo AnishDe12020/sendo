@@ -4,7 +4,6 @@ import Web3AuthWallet from "@/components/Web3AuthWallet";
 import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import useWeb3Auth from "@/hooks/useWeb3Auth";
-import { useConnection } from "@solana/wallet-adapter-react";
 
 const WalletPage = () => {
   const { address, login, web3auth, isLoadingAddress } = useWeb3Auth();

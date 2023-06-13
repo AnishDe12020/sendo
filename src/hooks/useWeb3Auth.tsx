@@ -36,8 +36,8 @@ const useWeb3Auth = () => {
       return;
     }
     const func = async () => {
-      const accounts = await getAccounts();
       setLoading(true);
+      const accounts = await getAccounts();
       if (!accounts || accounts.length === 0) {
         setLoading(false);
         return;
