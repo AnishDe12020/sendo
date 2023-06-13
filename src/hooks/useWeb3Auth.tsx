@@ -61,6 +61,8 @@ const useWeb3Auth = () => {
       }
     );
 
+    setProvider(web3authProvider);
+
     const acounts = await getAccounts();
 
     if (!acounts || acounts.length === 0) {
@@ -69,8 +71,6 @@ const useWeb3Auth = () => {
     }
 
     setAddress(acounts[0]);
-
-    setProvider(web3authProvider);
 
     return acounts[0];
   };

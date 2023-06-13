@@ -51,24 +51,6 @@ export const Header = () => {
                   <span className="sr-only">GitHub</span>
                 </div>
               </Link>
-              <Link
-                href={siteConfig.links.twitter}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <div
-                  className={cn(
-                    buttonVariants({
-                      size: "sm",
-                      variant: "ghost",
-                    }),
-                    "w-9 px-0"
-                  )}
-                >
-                  <Icons.twitter className="w-5 h-5 fill-current" />
-                  <span className="sr-only">Twitter</span>
-                </div>
-              </Link>
             </div>
 
             <ConnectWallet />
@@ -92,7 +74,13 @@ export const Header = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button onClick={login}>Login</Button>
+                <Button
+                  onClick={login}
+                  className="text-black bg-white hover:bg-gray-200"
+                >
+                  <Icons.google className="w-8 h-8 mr-1" />
+                  <span>Login</span>
+                </Button>
               )
             ) : (
               <Icons.spinner className="w-4 h-4 mr-2 animate-spin" />
