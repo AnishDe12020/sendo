@@ -38,7 +38,7 @@ const ClaimLinkCard = ({ link }: ClaimLinkCardProps) => {
 
   const claim = async (claimerAddress: string) => {
     try {
-      const { data } = await axios.post(`/api/links/${link.id}`, {
+      const { data } = await axios.post(`/api/links/token/${link.id}`, {
         claimerAddress,
       });
 

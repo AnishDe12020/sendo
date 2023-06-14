@@ -76,7 +76,7 @@ export const onSubmitToken = async (
 
       await sleep(5000);
 
-      const res = await axios.post("/api/links", {
+      const res = await axios.post("/api/links/token", {
         amount: data.amount,
         message: data.message,
         address: publicKey.toBase58(),
@@ -112,7 +112,7 @@ export const onSubmitToken = async (
         "processed"
       );
 
-      const res = await axios.post("/api/links", {
+      const res = await axios.post("/api/links/token", {
         amount: data.amount,
         message: data.message,
         address: publicKey.toBase58(),

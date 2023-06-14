@@ -34,6 +34,15 @@ import {
   toBigNumber,
   walletAdapterIdentity,
 } from "@metaplex-foundation/js";
+import {
+  calculateClosestTreeDepth,
+  getCreateCollectionTx,
+  getCreateTreeTx,
+} from "@/utils/compression";
+import { CreateMetadataAccountArgsV3 } from "@metaplex-foundation/mpl-token-metadata";
+import { VAULT_PUBLICKEY } from "@/lib/constants";
+import axios from "axios";
+import { confirmTransaction } from "@/utils/solana";
 
 const MAX_FILE_SIZE = 5_24_49_280;
 
@@ -41,8 +50,8 @@ export const createLinkNFTFormSchema = z.object({
   collectionName: z.string(),
   collectionDescription: z.string().optional(),
   collectionSize: z.number().min(1),
-  symbol: z.string().optional(),
-  network: z.enum(["mainnet-beta", "devnet"]),
+  symbol: z.string(),
+  network: z.enum(["devnet"]),
   image: z.instanceof(File),
 });
 
@@ -54,7 +63,7 @@ const CreateCompressedNFTDialog = ({ setIsOpen }: CreateLinkDialogProps) => {
   const form = useForm<z.infer<typeof createLinkNFTFormSchema>>({
     resolver: zodResolver(createLinkNFTFormSchema),
     defaultValues: {
-      network: "mainnet-beta",
+      network: "devnet",
     },
   });
 
@@ -74,6 +83,11 @@ const CreateCompressedNFTDialog = ({ setIsOpen }: CreateLinkDialogProps) => {
     }
 
     const storage = new ThirdwebStorage();
+    const connection = new Connection(
+      data.network === "devnet"
+        ? clusterApiUrl("devnet")
+        : (process.env.NEXT_PUBLIC_MAINNET_RPC as string)
+    );
 
     const randomNumnber = Math.floor(Math.random() * 1000000000);
 
@@ -92,6 +106,86 @@ const CreateCompressedNFTDialog = ({ setIsOpen }: CreateLinkDialogProps) => {
         `${data.collectionName}-metadata-${randomNumnber}.json`
       )
     );
+
+    const collectionMetadata: CreateMetadataAccountArgsV3 = {
+      data: {
+        name: data.collectionName,
+        symbol: data.symbol,
+        uri: metadataUrl,
+        sellerFeeBasisPoints: 0,
+        creators: null,
+        collection: null,
+        uses: null,
+      },
+      isMutable: false,
+      collectionDetails: null,
+    };
+
+    const depth = calculateClosestTreeDepth(data.collectionSize);
+
+    const {
+      treeAddress,
+      treeAuthority,
+      tx: createTreeTx,
+      treeKeypair,
+    } = await getCreateTreeTx(
+      connection,
+      depth.sizePair,
+      depth.canopyDepth,
+      wallet.publicKey
+    );
+
+    console.log("tree address: ", treeAddress);
+    console.log("tree authority: ", treeAuthority);
+
+    const createTreeSig = await wallet.sendTransaction(
+      createTreeTx,
+      connection,
+      { signers: [treeKeypair] }
+    );
+
+    await confirmTransaction(connection, createTreeSig);
+
+    console.log("create tree sig: ", createTreeSig);
+
+    const {
+      masterEditionAccount,
+      metadataAccount,
+      mint,
+      tokenAccount,
+      tx: createCollectionTx,
+      mintKeypair,
+    } = await getCreateCollectionTx(
+      connection,
+      wallet.publicKey,
+      collectionMetadata,
+      data.collectionSize,
+      wallet.publicKey
+    );
+
+    console.log("master edition account: ", masterEditionAccount);
+    console.log("metadata account: ", metadataAccount);
+    console.log("mint: ", mint);
+    console.log("token account: ", tokenAccount);
+
+    const createCollectionSig = await wallet.sendTransaction(
+      createCollectionTx,
+      connection,
+      { signers: [mintKeypair] }
+    );
+
+    await confirmTransaction(connection, createCollectionSig);
+
+    console.log("create collection sig: ", createCollectionSig);
+
+    const res = await axios.post("/api/links/compressed-nfts", {
+      collectionMintAddress: mint.toBase58(),
+      treeAddress: treeAddress.toBase58(),
+      name: data.collectionName,
+      uri: metadataUrl,
+    });
+
+    console.log(res.data);
 
     startTransition(() => {
       router.refresh();
@@ -163,7 +257,7 @@ const CreateCompressedNFTDialog = ({ setIsOpen }: CreateLinkDialogProps) => {
           name="symbol"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Symbol</FormLabel>
+              <FormLabel required>Symbol</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -182,13 +276,13 @@ const CreateCompressedNFTDialog = ({ setIsOpen }: CreateLinkDialogProps) => {
             <FormItem>
               <FormLabel>Network</FormLabel>
               <FormControl>
-                <Select {...field}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select network" />
                   </SelectTrigger>
 
                   <SelectContent>
-                    <SelectItem value="mainnet-beta">Mainnet</SelectItem>
+                    {/* <SelectItem value="mainnet-beta">Mainnet</SelectItem> */}
                     <SelectItem value="devnet">Devnet</SelectItem>
                   </SelectContent>
                 </Select>

@@ -58,7 +58,9 @@ const DeleteLinkDialog = ({ id, claimed }: DeleteLinkDialogProps) => {
               onClick={async () => {
                 const toastId = toast.promise(
                   async () => {
-                    const { data } = await axios.delete(`/api/links/${id}`);
+                    const { data } = await axios.delete(
+                      `/api/links/token/${id}`
+                    );
 
                     if (!data.success) {
                       throw new Error("Error deleting link");
