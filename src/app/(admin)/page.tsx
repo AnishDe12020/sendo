@@ -12,6 +12,7 @@ import {
   ZapIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 const Home = () => {
   return (
@@ -61,7 +62,7 @@ const Home = () => {
 
         <div className="grid grid-cols-1 gap-4 mt-32 sm:grid-cols-2 w-fit">
           <div
-            className="flex flex-col border-[1px] border-[#2A2427] rounded-xl bg-[#121212B2] w-64 h-56 items-center justify-center p-4"
+            className="flex flex-col border-[1px] border-[#2A2427] rounded-xl bg-[#121212B2] w-64 h-64 items-center justify-center p-4"
             style={{ backdropFilter: "blur(150px)" }}
           >
             <FuelIcon className="w-8 h-8 mx-auto text-white" />
@@ -78,7 +79,7 @@ const Home = () => {
 
           <div className="flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
             <div
-              className="flex flex-col border-[1px] border-[#2A2427] rounded-xl bg-[#121212B2] items-center justify-center w-64 h-56 p-4"
+              className="flex flex-col border-[1px] border-[#2A2427] rounded-xl bg-[#121212B2] items-center justify-center w-64 h-64 p-4"
               style={{ backdropFilter: "blur(150px)" }}
             >
               <ZapIcon className="w-8 h-8 mx-auto text-white" />
@@ -98,7 +99,7 @@ const Home = () => {
 
           <div className="flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
             <div
-              className="flex flex-col border-[1px] border-[#2A2427] rounded-xl bg-[#121212B2] items-center justify-center w-64 h-56 p-4"
+              className="flex flex-col border-[1px] border-[#2A2427] rounded-xl bg-[#121212B2] items-center justify-center w-64 h-64 p-4"
               style={{ backdropFilter: "blur(150px)" }}
             >
               <CoinsIcon className="w-8 h-8 mx-auto text-white" />
@@ -117,9 +118,10 @@ const Home = () => {
 
           <div className="flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
             <div
-              className="flex flex-col border-[1px] border-[#2A2427] rounded-xl bg-[#121212B2] items-center justify-center w-64 h-56 p-4"
+              className="flex flex-col border-[1px] border-[#2A2427] rounded-xl bg-[#121212B2] items-center justify-center w-64 h-64 p-4"
               style={{ backdropFilter: "blur(150px)" }}
             >
+              <Badge className="mb-4">Coming soon</Badge>
               <CandyIcon className="w-8 h-8 mx-auto text-white" />
 
               <div className="flex flex-col items-center justify-center gap-2 mt-4">
@@ -128,8 +130,7 @@ const Home = () => {
                 </h3>
                 <p className="text-sm font-normal text-white">
                   Create a link/qr code which can be scanned by anyone to
-                  receive a compressed NFT. We limit it to 1 per user to prevent
-                  spam.
+                  receive a compressed NFT.
                 </p>
               </div>
             </div>
