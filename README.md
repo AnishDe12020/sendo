@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Sendo Proof-of-concept
 
-## Getting Started
+This is an open-source proof of concept of a [Tiplink](https://tiplink.io) alternative for distributing crypto assets via a simple link that can be shared with anyone even if you don't know their wallet address or they don't have a wallet.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
+- One click link creation and sharing
+- One click claiming of assets
+- Gasless transactions when claiming assets
+- Web-based wallet when using web3auth
+- Guide to create a non-custodial wallet and move all assets if the receiver wants to move from web3auth wallet to a non-custodial wallet
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## How it works
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- You connect your wallet, select the token you want to send and the amount
+- You deposit the assets and the link is created
+- You share the link with anyone you want to send the assets to
+- They open the link and claim the assets to a new wallet (made with web3auth) or to their existing solana wallet by connecting it
 
-[http://localhost:3000/api/hello](http://localhost:3000/api/hello) is an endpoint that uses [Route Handlers](https://beta.nextjs.org/docs/routing/route-handlers). This endpoint can be edited in `app/api/hello/route.ts`.
+## Tech stack
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+- Next.js 13 with app direcory for the frontend
+- Next.js API routes for the backend
+- Nextauth for authentication with Solana wallet
+- Web3auth for creating a new wallet for the receiver if they don't have one
+- TailwindCSS and Shadcn UI for styling
 
-## Learn More
+## Self hosting
 
-To learn more about Next.js, take a look at the following resources:
+### Prerequisites
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- MongoDB database (you can create a free one on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register))
+- Web3auth project (you can create a free one on [web3auth.io](https://web3auth.io))
+- Optional but highly recommended: Sentry Project (you can create a free one on [Sentry](https://sentry.io))
+- Solana Mainnet RPC (You can use Helius, extrnode, etc)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+### Steps
 
-## Deploy on Vercel
+- Clone the repo and install dependencies with `pnpm i`
+- Create a `.env` file and add the `DATABASE_URL` variable by setting it to the MongoDB connection string
+- Create a vault keypair with `node scripts/genKeypair.js`
+- Create a `.env.local` file and add in the rest of the environment variables (see `.env.example` for reference)
+- Run the app with `pnpm dev`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+You can now host it on your favourite cloud provider like Vercel, Netlify, etc.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## Contributing
+
+Contributions are welcome! Feel free to open an issue or a pull request.

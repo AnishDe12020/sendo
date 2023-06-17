@@ -11,6 +11,5 @@ const keypair: Keypair = Keypair.fromSecretKey(
 );
 
 console.log("publicKey", keypair.publicKey);
-// console.log(new TextDecoder().decode(keypair.secretKey));
 const key = bs58.encode(keypair.secretKey);
 console.log("privateKey", key);
