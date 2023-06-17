@@ -4,6 +4,7 @@ import {
   PublicKey,
   SystemProgram,
   Transaction,
+  sendAndConfirmTransaction,
 } from "@solana/web3.js";
 import {
   ALL_DEPTH_SIZE_PAIRS,
@@ -14,7 +15,12 @@ import {
 } from "@solana/spl-account-compression";
 import {
   PROGRAM_ID as BUBBLEGUM_PROGRAM_ID,
+  TokenProgramVersion,
+  TokenStandard,
   createCreateTreeInstruction,
+  createMintToCollectionV1Instruction,
+  createSetTreeDelegateInstruction,
+  errorFromCode,
 } from "@metaplex-foundation/mpl-bubblegum";
 import {
   CreateMetadataAccountArgsV3,
@@ -40,7 +46,7 @@ import { VAULT_PUBLICKEY } from "@/lib/constants";
 export const getCreateTreeTx = async (
   connection: Connection,
   maxDepthSizePair: ValidDepthSizePair,
-  canopyDepth: number = 0,
+  canopyDepth: number,
   payerPublicKey: PublicKey
 ) => {
   const treeKeypair = Keypair.generate();
@@ -49,6 +55,8 @@ export const getCreateTreeTx = async (
     [treeKeypair.publicKey.toBuffer()],
     BUBBLEGUM_PROGRAM_ID
   );
+
+  console.log("maxDepthSizePair", maxDepthSizePair);
 
   const allocTreeIx = await createAllocTreeIx(
     connection,
@@ -76,10 +84,18 @@ export const getCreateTreeTx = async (
     BUBBLEGUM_PROGRAM_ID
   );
 
+  //   const changeTreeDelegateIx = createSetTreeDelegateInstruction({
+  //     merkleTree: treeKeypair.publicKey,
+  //     newTreeDelegate: VAULT_PUBLICKEY,
+  //     treeAuthority,
+  //     treeCreator: payerPublicKey,
+  //   });
+
   const tx = new Transaction();
 
   tx.add(allocTreeIx);
   tx.add(createTreeIx);
+  //   tx.add(changeTreeDelegateIx);
   tx.feePayer = payerPublicKey;
 
   return {
@@ -231,27 +247,113 @@ export const mintCompressedNFTServerMetaplex = async (
   connection: Connection,
   identity: Keypair,
   collectionMint: PublicKey,
+  collectionMetadata: PublicKey,
+  collectionMasterEditionAccount: PublicKey,
   tree: PublicKey,
   name: string,
   uri: string,
   receiverAddress: PublicKey
 ) => {
-  const metaplex = Metaplex.make(connection).use(keypairIdentity(identity));
+  const [treeAuthority, _bump] = PublicKey.findProgramAddressSync(
+    [tree.toBuffer()],
+    BUBBLEGUM_PROGRAM_ID
+  );
 
-  const { response, nft } = await metaplex.nfts().create({
-    name,
-    uri,
-    sellerFeeBasisPoints: 0,
-    collection: collectionMint,
-    collectionAuthority: identity,
-    tree,
-    tokenOwner: receiverAddress,
-  });
+  const [bubblegumSigner, _bump2] = PublicKey.findProgramAddressSync(
+    [Buffer.from("collection_cpi", "utf8")],
+    BUBBLEGUM_PROGRAM_ID
+  );
 
-  return {
-    nft,
-    response,
-  };
+  console.log("identityAddress", identity.publicKey.toBase58());
+  console.log("treeAuthority", treeAuthority.toBase58());
+  console.log("bubblegumSigner", bubblegumSigner.toBase58());
+  console.log("collectionMint", collectionMint.toBase58());
+  console.log("collectionMetadata", collectionMetadata.toBase58());
+  console.log(
+    "collectionMasterEditionAccount",
+    collectionMasterEditionAccount.toBase58()
+  );
+  console.log("tree", tree.toBase58());
+  console.log("name", name);
+  console.log("uri", uri);
+  console.log("receiverAddress", receiverAddress.toBase58());
+
+  const mintIx = createMintToCollectionV1Instruction(
+    {
+      payer: identity.publicKey,
+      merkleTree: tree,
+      treeAuthority,
+      treeDelegate: identity.publicKey,
+      leafOwner: receiverAddress,
+      leafDelegate: identity.publicKey,
+      collectionAuthority: identity.publicKey,
+      collectionAuthorityRecordPda: BUBBLEGUM_PROGRAM_ID,
+      collectionMint,
+      collectionMetadata,
+      editionAccount: collectionMasterEditionAccount,
+      compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+      logWrapper: SPL_NOOP_PROGRAM_ID,
+      bubblegumSigner: bubblegumSigner,
+      tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+    },
+    {
+      metadataArgs: {
+        name,
+        uri,
+        sellerFeeBasisPoints: 0,
+        symbol: "",
+        creators: [],
+        isMutable: false,
+        uses: null,
+        tokenStandard: TokenStandard.NonFungible,
+        collection: {
+          key: collectionMint,
+          verified: false,
+        },
+        primarySaleHappened: false,
+        editionNonce: null,
+
+        tokenProgramVersion: TokenProgramVersion.Original,
+      },
+    }
+  );
+
+  const tx = new Transaction();
+
+  tx.add(mintIx);
+
+  tx.feePayer = identity.publicKey;
+
+  const txSignature = await sendAndConfirmTransaction(
+    connection,
+    tx,
+    [identity],
+    {
+      commitment: "confirmed",
+      skipPreflight: true,
+    }
+  );
+
+  console.log("txSignature", txSignature);
+
+  return txSignature;
+
+  //   const metaplex = Metaplex.make(connection).use(keypairIdentity(identity));
+
+  //   const { response, nft } = await metaplex.nfts().create({
+  //     name,
+  //     uri,
+  //     sellerFeeBasisPoints: 0,
+  //     collection: collectionMint,
+  //     collectionAuthority: identity,
+  //     tree,
+  //     tokenOwner: receiverAddress,
+  //   });
+
+  //   return {
+  //     nft,
+  //     response,
+  //   };
 };
 
 const allDepthSizes = ALL_DEPTH_SIZE_PAIRS.flatMap(
@@ -288,7 +390,7 @@ export const calculateClosestTreeDepth = (size: number) => {
 
   return {
     sizePair: {
-      maxDepth,
+      maxDepth: maxDepth,
       maxBufferSize,
     } as ValidDepthSizePair,
     canopyDepth: maxCanopyDepth - 3 >= 0 ? maxCanopyDepth - 3 : 0,

@@ -82,6 +82,10 @@ const CreateCompressedNFTDialog = ({ setIsOpen }: CreateLinkDialogProps) => {
       return;
     }
 
+    const depth = calculateClosestTreeDepth(data.collectionSize);
+
+    console.log("depth", depth);
+
     const storage = new ThirdwebStorage();
     const connection = new Connection(
       data.network === "devnet"
@@ -107,6 +111,8 @@ const CreateCompressedNFTDialog = ({ setIsOpen }: CreateLinkDialogProps) => {
       )
     );
 
+    console.log("metadata url: ", metadataUrl);
+
     const collectionMetadata: CreateMetadataAccountArgsV3 = {
       data: {
         name: data.collectionName,
@@ -121,71 +127,71 @@ const CreateCompressedNFTDialog = ({ setIsOpen }: CreateLinkDialogProps) => {
       collectionDetails: null,
     };
 
-    const depth = calculateClosestTreeDepth(data.collectionSize);
+    console.log("collection metadata: ", collectionMetadata);
 
-    const {
-      treeAddress,
-      treeAuthority,
-      tx: createTreeTx,
-      treeKeypair,
-    } = await getCreateTreeTx(
-      connection,
-      depth.sizePair,
-      depth.canopyDepth,
-      wallet.publicKey
-    );
+    // const {
+    //   treeAddress,
+    //   treeAuthority,
+    //   tx: createTreeTx,
+    //   treeKeypair,
+    // } = await getCreateTreeTx(
+    //   connection,
+    //   depth.sizePair,
+    //   depth.canopyDepth,
+    //   wallet.publicKey
+    // );
 
-    console.log("tree address: ", treeAddress);
-    console.log("tree authority: ", treeAuthority);
+    // console.log("tree address: ", treeAddress);
+    // console.log("tree authority: ", treeAuthority);
 
-    const createTreeSig = await wallet.sendTransaction(
-      createTreeTx,
-      connection,
-      { signers: [treeKeypair] }
-    );
+    // const createTreeSig = await wallet.sendTransaction(
+    //   createTreeTx,
+    //   connection,
+    //   { signers: [treeKeypair] }
+    // );
 
-    await confirmTransaction(connection, createTreeSig);
+    // await confirmTransaction(connection, createTreeSig);
 
-    console.log("create tree sig: ", createTreeSig);
+    // console.log("create tree sig: ", createTreeSig);
 
-    const {
-      masterEditionAccount,
-      metadataAccount,
-      mint,
-      tokenAccount,
-      tx: createCollectionTx,
-      mintKeypair,
-    } = await getCreateCollectionTx(
-      connection,
-      wallet.publicKey,
-      collectionMetadata,
-      data.collectionSize,
-      wallet.publicKey
-    );
+    // const {
+    //   masterEditionAccount,
+    //   metadataAccount,
+    //   mint,
+    //   tokenAccount,
+    //   tx: createCollectionTx,
+    //   mintKeypair,
+    // } = await getCreateCollectionTx(
+    //   connection,
+    //   wallet.publicKey,
+    //   collectionMetadata,
+    //   data.collectionSize,
+    //   wallet.publicKey
+    // );
 
-    console.log("master edition account: ", masterEditionAccount);
-    console.log("metadata account: ", metadataAccount);
-    console.log("mint: ", mint);
-    console.log("token account: ", tokenAccount);
+    // console.log("master edition account: ", masterEditionAccount);
+    // console.log("metadata account: ", metadataAccount);
+    // console.log("mint: ", mint);
+    // console.log("token account: ", tokenAccount);
 
-    const createCollectionSig = await wallet.sendTransaction(
-      createCollectionTx,
-      connection,
-      { signers: [mintKeypair] }
-    );
+    // const createCollectionSig = await wallet.sendTransaction(
+    //   createCollectionTx,
+    //   connection,
+    //   { signers: [mintKeypair] }
+    // );
 
-    await confirmTransaction(connection, createCollectionSig);
+    // await confirmTransaction(connection, createCollectionSig);
 
-    console.log("create collection sig: ", createCollectionSig);
+    // console.log("create collection sig: ", createCollectionSig);
 
-    const res = await axios.post("/api/links/compressed-nfts", {
-      collectionMintAddress: mint.toBase58(),
-      treeAddress: treeAddress.toBase58(),
-      name: data.collectionName,
-      uri: metadataUrl,
-    });
+    // const res = await axios.post("/api/links/compressed-nfts", {
+    //   collectionMintAddress: mint.toBase58(),
+    //   treeAddress: treeAddress.toBase58(),
+    //   name: data.collectionName,
+    //   uri: metadataUrl,
+    // });
 
-    console.log(res.data);
+    // console.log(res.data);
 
     startTransition(() => {
       router.refresh();
