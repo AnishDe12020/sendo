@@ -4,23 +4,10 @@ import {
   ConnectionProvider,
   WalletProvider,
 } from "@solana/wallet-adapter-react";
-import {
-  BackpackWalletAdapter,
-  PhantomWalletAdapter,
-  GlowWalletAdapter,
-} from "@solana/wallet-adapter-wallets";
+import { PhantomWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { useMemo } from "react";
 
 export const SolanaProvider = ({ children }: { children: React.ReactNode }) => {
-  const wallets = useMemo(
-    () => [
-      new PhantomWalletAdapter(),
-      new BackpackWalletAdapter(),
-      new GlowWalletAdapter(),
-    ],
-    []
-  );
-
   const endpoint = useMemo(
     () => process.env.NEXT_PUBLIC_MAINNET_RPC as string,
     []
@@ -29,7 +16,7 @@ export const SolanaProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider wallets={[]} autoConnect>
         {children}
       </WalletProvider>
     </ConnectionProvider>

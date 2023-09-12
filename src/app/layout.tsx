@@ -7,6 +7,7 @@ import SessionProviderWrapper from "@/components/wrappers/SessionProvider";
 import Toaster from "@/components/wrappers/SonnerToaster";
 import Web3AuthProvider from "@/components/wrappers/Web3AuthProvider";
 import ReactQueryProvider from "@/components/wrappers/ReactQueryProvider";
+import Script from "next/script";
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -30,6 +31,16 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
                   />
                   <Toaster />
                   {children}
+                  {process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL &&
+                    process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && (
+                      <Script
+                        src={process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL}
+                        data-website-id={
+                          process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID
+                        }
+                        strategy="lazyOnload"
+                      />
+                    )}
                 </ReactQueryProvider>
               </Web3AuthProvider>
             </SessionProviderWrapper>
